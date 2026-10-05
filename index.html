@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Player Path — Train Your Football Brain</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -46,6 +45,11 @@ h1,h2{font-style:italic;transform:skewX(-6deg)}
 .lock{opacity:.45}
 .btn::after,.glitch::before,.glitch::after{display:none}
 .ball,.orb,.bad{animation:none}.card:hover{transform:none}
+.pc{background:linear-gradient(135deg,#FFD700,#c9a000 60%,#7a5c00);color:#1a1200;clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px))}
+.lg{background:linear-gradient(160deg,#12234Acc,#0A7FD633)}
+main h2.text-4xl{border-left:6px solid #19C3FF;padding-left:12px}
+.hero-t{background:linear-gradient(90deg,#fff,#19C3FF);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.pill{padding:.4rem 1rem;border-radius:999px;border:1px solid transparent;color:#7f93b8;font-weight:600}.pill.on{border-color:#19C3FF;color:#fff;box-shadow:0 0 14px #19c3ff55}
 </style></head><body>
 <div id="prog"></div>
 <div id="loader"><div class="bb text-4xl glow">⚽ PLAYER PATH</div></div>
@@ -56,10 +60,10 @@ h1,h2{font-style:italic;transform:skewX(-6deg)}
 <main class="max-w-6xl mx-auto px-4 py-8">
 
 <section id="home" class="page on">
- <div class="relative text-center py-16"><div class="orb bg-sky-400 -top-10 left-0"></div><div class="orb bg-blue-500 top-20 right-0"></div>
+ <div class="relative text-center py-16"><svg class="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#19C3FF" stroke-width="1"><rect x="10" y="10" width="380" height="180"/><line x1="200" y1="10" x2="200" y2="190"/><circle cx="200" cy="100" r="28"/><rect x="10" y="60" width="50" height="80"/><rect x="340" y="60" width="50" height="80"/></g></svg><div class="orb bg-sky-400 -top-10 left-0"></div><div class="orb bg-blue-500 top-20 right-0"></div>
   <h1 class="text-6xl md:text-8xl relative">TRAIN <span class="glow">TO WIN</span></h1>
   <p class="mt-4 text-lg text-sky-200 relative">Position quizzes, a simple 3D tactics board and drills built for you. Train smart. Play sharp. Win.</p>
-  <button class="btn mt-8 relative" onclick="go(user?'dash':'login')">Start Your Path</button></div>
+  <button class="btn mt-8 relative" onclick="go(user?'dash':'login')">Start Your Path</button><div class="grid grid-cols-3 gap-3 max-w-xl mx-auto mt-10 relative"><div class="glass p-3"><div class="bb text-4xl glow">15</div><div class="text-xs">POSITIONS</div></div><div class="glass p-3"><div class="bb text-4xl glow">8</div><div class="text-xs">FORMATIONS</div></div><div class="glass p-3"><div class="bb text-4xl glow">6</div><div class="text-xs">RANKS</div></div></div></div>
  <div class="grid md:grid-cols-3 gap-5" id="feats"></div>
  <h2 class="text-4xl mt-14 mb-4">RANKS</h2><div class="grid grid-cols-2 md:grid-cols-6 gap-3" id="ranksG"></div>
  <h2 class="text-4xl mt-14 mb-4">WORDS OF THE GREATS</h2><div class="glass p-6 text-center text-xl italic" id="quote"></div>
@@ -71,7 +75,7 @@ h1,h2{font-style:italic;transform:skewX(-6deg)}
  <p class="text-sm text-sky-300 mb-3">or continue with your Gmail address</p>
  <input id="em" type="email" placeholder="you@gmail.com"><button class="btn w-full mt-3" onclick="emailLogin()">Continue</button></div></section>
 
-<section id="dash" class="page">
+<section id="dash" class="page"><div id="pcard"></div>
  <div class="grid md:grid-cols-4 gap-4" id="stats"></div><div class="glass p-4 mt-4" id="rbar"></div>
  <div class="grid md:grid-cols-2 gap-5 mt-5">
   <div class="glass p-5"><h3 class="text-2xl mb-2">RATING GRAPH</h3><svg id="graph" viewBox="0 0 300 120" class="w-full"></svg></div>
@@ -93,10 +97,13 @@ h1,h2{font-style:italic;transform:skewX(-6deg)}
  <label>Position<select id="pp"></select></label><label>Height (cm)<input id="ph" type="number"></label>
  <label>Weight (kg)<input id="pw" type="number"></label><label>Main weakness<select id="pk"><option>speed</option><option>power</option><option>dribbling</option><option>weak foot</option><option>shooting</option><option>position</option></select></label></div>
  <button class="btn mt-4" onclick="saveProfile()">Save</button> <button class="ghost mt-4" onclick="logout()">Log out</button></div></section>
-<section id="board" class="page"><h2 class="text-4xl mb-2">3D TACTICS BOARD</h2>
-<div class="flex flex-wrap gap-2 mb-3 items-center"><button class="ghost" onclick="bMode('form')">Formations</button><button class="ghost" onclick="bMode('run')">Runs</button><select id="bf" style="width:auto" onchange="bMode('form')"></select><span class="flex-1"></span><button class="ghost" onclick="view()">Switch view</button></div>
-<div class="glass p-3 mb-3" id="btask"></div><div id="cv" class="glass overflow-hidden" style="height:min(70vh,520px);touch-action:none;padding:0"></div>
-<div class="flex gap-3 mt-3"><button class="btn" onclick="bCheck()">Check</button><button class="ghost" onclick="bNext()">Next</button></div><div id="bres" class="glass p-4 mt-3"></div></section>
+<section id="board" class="page"><h2 class="text-4xl mb-3">TACTICS <span class="glow">BOARD</span></h2>
+<div id="bmodes" class="flex flex-wrap gap-2 mb-2"></div><div id="btabs" class="flex flex-wrap gap-1 mb-3"></div>
+<p id="btask" class="text-center mb-2"></p>
+<div class="glass p-2 mx-auto" style="max-width:520px"><svg id="bsv" viewBox="0 0 68 105" class="w-full" style="touch-action:none;max-height:78vh"></svg></div>
+<p id="bcap" class="text-center text-sky-300 my-3"></p>
+<div class="flex flex-wrap justify-center gap-3"><button class="btn" id="bchk" onclick="bCheck()">Check</button><button class="ghost" id="bdemo" onclick="bHint()">Watch demo run</button><button class="ghost" id="bnx" onclick="bNext()">Next</button><button class="ghost" onclick="bLoad()">Reset</button></div>
+<div id="bres" class="glass p-4 mt-3 text-center"></div></section>
 </main>
 <footer class="text-center text-sm text-sky-700 py-8">© 2026 Player Path</footer>
 
@@ -107,7 +114,9 @@ const CLIENT_ID="YOUR_GOOGLE_CLIENT_ID_HERE";
 let user=null,D=null;
 const K=e=>'playerpath::'+e;
 function load(e){try{return JSON.parse(localStorage.getItem(K(e)))}catch(x){return null}}
-function save(){try{localStorage.setItem(K(user),JSON.stringify(D))}catch(x){}}
+function save(){try{localStorage.setItem(K(user),JSON.stringify(D))}catch(x){}cloud('push')}
+async function cloud(m){if(!SB_URL||!user)return;const h={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};try{if(m==='push')await fetch(SB_URL+'/rest/v1/profiles',{method:'POST',headers:{...h,Prefer:'resolution=merge-duplicates'},body:JSON.stringify({email:user,data:D})});else{const r=await(await fetch(SB_URL+'/rest/v1/profiles?email=eq.'+encodeURIComponent(user)+'&select=data',{headers:h})).json();if(r[0]&&r[0].data.xp>=D.xp){D=r[0].data;localStorage.setItem(K(user),JSON.stringify(D));if($('#dash').classList.contains('on')){renderDash();dash2()}}}}catch(e){}}
+
 function toast(m){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:80px;right:20px;z-index:99;background:#050A18;border:1px solid #19C3FF;color:#19C3FF;padding:12px 18px;border-radius:12px';document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
 function confetti(){for(let i=0;i<50;i++){const c=document.createElement('div');c.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}vw;width:9px;height:9px;background:${['#19C3FF','#FFD700','#1E90FF','#fff'][i%4]};z-index:99;pointer-events:none`;c.animate([{transform:'translateY(0)'},{transform:'translateY(105vh) rotate(700deg)',opacity:0}],{duration:2000+Math.random()*1500});document.body.appendChild(c);setTimeout(()=>c.remove(),3600)}}
 
@@ -140,10 +149,10 @@ const DRILLS={speed:['Ladder + 10m sprints x6','Hill sprints 8x20m','Flying 30m 
 const POSD={GK:'Dive and recovery ladder',CB:'Header + recovery sprints',LB:'Overlap-and-cross runs',RB:'Overlap-and-cross runs',LWB:'Stamina shuttles',RWB:'Stamina shuttles',CDM:'Rondo in the middle',CM:'Pass-and-move squares',CAM:'Through-ball patterns',LM:'Wide 1v1s',RM:'Wide 1v1s',LW:'1v1 dribble finish',RW:'1v1 dribble finish',CF:'Hold-up and lay-off',ST:'Finishing circuits'};
 
 /* NAV / ROUTER */
-function go(p){document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));$('#'+p).classList.add('on');window.scrollTo(0,0);if(p==='dash')renderDash();if(p==='quiz')renderQuiz();if(p==='train')renderTrain();if(p==='notes')renderNotes();if(p==='profile')renderProfile();if(p==='board')bOpen()}
+function go(p){document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));$('#'+p).classList.add('on');window.scrollTo(0,0);if(p==='dash'){renderDash();dash2()}if(p==='quiz')renderQuiz();if(p==='train')renderTrain();if(p==='notes')renderNotes();if(p==='profile')renderProfile();if(p==='board')bOpen()}
 function nav(){const n=$('#navR');n.innerHTML=user?['dash:Dashboard','quiz:Quizzes','board:3D Board','train:Training','notes:Notes','profile:Profile'].map(x=>{const[a,b]=x.split(':');return`<button class="text-sky-200 hover:text-sky-400" onclick="go('${a}')">${b}</button>`}).join(''):'<button class="btn" onclick="go(\'login\')">Log in</button>'}
 /* AUTH */
-function signIn(email){user=email.toLowerCase();D=load(user)||{xp:0,hist:[],scores:{},notes:[],prof:{pos:'ST',pk:'speed'},days:{}};save();localStorage.setItem('pp::last',user);nav();go('dash');confetti()}
+function signIn(email){user=email.toLowerCase();D=load(user)||{xp:0,hist:[],scores:{},notes:[],prof:{pos:'ST',pk:'speed'},days:{}};localStorage.setItem(K(user),JSON.stringify(D));localStorage.setItem('pp::last',user);cloud('pull');nav();go('dash');confetti()}
 function emailLogin(){const e=$('#em').value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return toast('Enter a valid email');signIn(e)}
 function logout(){user=null;D=null;localStorage.removeItem('pp::last');nav();go('home')}
 function gcb(r){try{const p=JSON.parse(atob(r.credential.split('.')[1]));signIn(p.email)}catch(e){toast('Google sign-in failed')}}
@@ -161,6 +170,24 @@ $('#dq').textContent=QUOTES[new Date().getDate()%QUOTES.length];
 const ri=RANKS.indexOf(rk),nx=RANKS[ri+1];$('#rbar').innerHTML=nx?`<div class="flex justify-between text-sm mb-1"><span>${rk[0]}</span><span>${nx[1]-D.xp} XP to ${nx[0]}</span></div><div class="h-3 bg-slate-800"><div class="h-3 bg-sky-400" style="width:${(D.xp-rk[1])/(nx[1]-rk[1])*100}%;transition:width 1.2s"></div></div>`:'<b class="text-yellow-300">MAX RANK — WORLD #1</b>';
 document.querySelectorAll('.cu').forEach(e=>{const to=+e.dataset.v,t0=performance.now();(function f(t){const p=Math.min((t-t0)/1100,1);e.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)})}
 /* QUIZ */
+const SB_URL="",SB_KEY="";
+const QX={GK:["Cross is cut out and a counter is on.|Throw it quickly to the free full-back|Walk it out|Kick it out of play","Penalty kick.|Pick a side late, stay big, react|Dive at the first sign|Stand still"],
+CB:["Striker drops into the hole between lines.|Pass him on or step with cover behind|Always follow|Ignore him","Diagonal ball to the far-post runner.|Track the run, win goal-side position|Ball-watch|Hold the line"],
+LB:["Winger cuts inside onto his strong foot.|Show him outside, stay goal-side|Let him shoot|Dive in","Team attacks down your side, winger holds width.|Tuck inside as an extra midfielder|Stay on the line|Go forward blindly"],
+RB:["Opponent switches play to the far winger.|Shift across and stay compact|Stay put|Chase the ball","You win the ball deep.|Play to the safest forward outlet|Dribble across the box|Hoof it"],
+LWB:["Their winger has width on your flank.|Jockey and force him inside to the CB|Stay too deep|Dive in","Your team has the ball in midfield.|Push high and offer width|Stay at the back|Always come inside"],
+RWB:["Their winger has width on your flank.|Jockey and force him inside to the CB|Stay too deep|Dive in","Your team has the ball in midfield.|Push high and offer width|Stay at the back|Always come inside"],
+CDM:["Their number 10 receives between the lines.|Step onto him quickly from behind|Wait|Drop deeper","You win the ball in your own half.|Play forward quickly if the lane is open|Always pass back|Hold it"],
+CM:["Central passing lanes are blocked.|Move the ball wide to reset|Force the pass|Dribble into traffic","Opponent counter, you are first to react.|Delay and screen so teammates recover|Tackle recklessly|Walk back"],
+CAM:["Your defensive midfielder is tightly marked.|Drop to help and drag a marker|Hide|Stand still","Two defenders stand between you and goal.|Slip a pass into the striker's run|Shoot from distance|Hold it"],
+LM:["Your full-back goes high.|Tuck inside to cover the middle|Stay wide|Go forward too","You are on the touchline with pressure behind you.|Take the first touch away from the press|Hold still|Trap with your back"],
+RM:["Opponent full-back overlaps.|Track the runner and pass him on|Ignore him|Stay high","Space opens inside.|Cut into the half-space|Hug the line|Go back"],
+LW:["Defender backs off to cover.|Attack him at pace to force a mistake|Slow down|Pass back","Keeper is slow to close the near post.|Shoot near post at pace|Cross|Hold it"],
+RW:["Their full-back is tired late on.|Isolate and attack him 1v1|Pass back|Stay still","Striker makes a near-post run.|Cross to the far post|Drive into the keeper|Pass back"],
+CF:["Defenders are tight on you.|Lay off first-time and spin|Hold it|Long shot","Your team crosses.|Attack the near post and drag the CB|Wait at the spot|Stand offside"],
+ST:["Their defence sits deep.|Drop and link, then run again|Stand on the line|Only wait","Keeper pushes the ball out.|Be first to the rebound|Stand still|Watch"]};
+function dash2(){const p=D.prof,r=rating(),sc=Object.entries(D.scores).sort((a,b)=>b[1]-a[1]),lab=k=>k==='3D'?'3D BOARD':k==='BQ'?'BOARD QUIZ':POS[k]||k,low=sc.filter(x=>x[0]!=='3D').slice(-1)[0];
+$('#pcard').innerHTML=`<div class="grid md:grid-cols-3 gap-4 mb-4"><div class="pc p-5 flex items-center gap-4"><div><div class="bb text-6xl leading-none">${r}</div><div class="bb text-2xl">${p.pos}</div></div><div class="flex-1"><div class="bb text-2xl">${esc(p.n||'YOUR NAME')}</div><div class="text-sm">${esc(p.t||'Your team')} · ${rankOf(D.xp)[0]}</div></div>${p.pic?`<img src="${p.pic}" class="w-16 h-16 rounded-full object-cover border-2 border-black/40">`:''}</div><div class="glass p-5 md:col-span-2"><h3 class="text-2xl mb-2">KNOWLEDGE BY POSITION</h3>${sc.length?sc.map(([k,v])=>`<div class="flex items-center gap-2 text-sm mb-1"><span class="w-24">${lab(k)}</span><div class="flex-1 h-2 bg-slate-800"><div class="h-2 bg-sky-400" style="width:${v}%"></div></div><span>${v}%</span></div>`).join(''):'<p class="text-sky-300">Take a quiz or a 3D board challenge to fill this in.</p>'}${low&&low[1]<70?`<p class="text-yellow-300 text-sm mt-2">Focus next: ${lab(low[0])} (${low[1]}%)</p>`:''}</div></div>`}
 let qs=[],qi=0,sc=0,qpos='',lives=3,gain=0;
 const GRP={GK:'gk',CB:'def',LB:'def',RB:'def',LWB:'def',RWB:'def',CDM:'mid',CM:'mid',CAM:'mid',LM:'mid',RM:'mid',LW:'att',RW:'att',CF:'att',ST:'att'};
 const GP={gk:["Opponent breaks 1v1, ball bounces, you're off your line.|Retreat watching the ball, stay set|Sprint straight at him|Freeze","Back-pass from your CB under press.|Clear first-time to the safe side|Dribble the striker|Hold it","Free kick 25 yards, central, wall of 4.|Cover the open side, trust the wall|Hide behind the wall|Stay on one post","Cross to the far post, you're central.|Step toward it, call early, catch with two hands|Stay on the line|Rush the near post","Shot from a tight angle.|Close the near post first, stay big|Cover the far post|Dive before the shot"],
@@ -169,7 +196,7 @@ mid:["Opponent presses your build-up in a 4-4-2.|Find the free man between the l
 att:["Defender steps tight on you.|Lay it off and spin in behind|Hold it|Dribble through two","Keeper has come off his line.|Place the shot or lob beyond him|Always cross|Pass back","Teammate shoots and it may rebound.|Follow up the shot|Watch|Walk away","Defensive line is high.|Time the run on the shoulder, stay onside until the pass|Run early offside|Stand still","Back four are narrow.|Stay wide and receive the switch|Come inside|Hold central"]};
 const TACT=["What is rest defence?|Players kept back in attack to stop counters|A defensive substitution|A half-time plan","A strong pressing trigger?|Backward pass or heavy touch by the opponent|Goal kick|Half-time","The half-space is...|The channel between wide and central lanes|The centre circle|The penalty spot","Offside is judged when...|The pass is played|The receiver controls it|The shot is taken","A false 9 does what?|Drops deep to drag CBs and create space|Stays on the goal line|Plays as keeper","A low block aims to...|Stay compact and deny central space|Press high|Man-mark everywhere","A back-three build-up creates...|An overload against the first press|A weaker midfield|More offsides","An overload means...|More of your players than theirs in an area|Extra time|Fewer attackers"];
 function renderQuiz(){$('#posBtns').innerHTML=Object.keys(POS).map(c=>`<button class="ghost text-sm ${c===(qpos||D.prof.pos)?'bg-sky-900':''}" onclick="startQuiz('${c}')">${c}</button>`).join('');startQuiz(qpos||D.prof.pos)}
-function startQuiz(p){qpos=p;qi=0;sc=0;lives=3;gain=0;const pick=(a,n)=>[...a].sort(()=>Math.random()-.5).slice(0,n);qs=[...Q[p],...pick(GP[GRP[p]],3),...pick(TACT,3)].map(s=>{const[t,...o]=s.split('|');const op=o.slice(0,3).map((x,i)=>({x,c:i===0}));for(let i=op.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[op[i],op[j]]=[op[j],op[i]]}return{t,opts:op}});document.querySelectorAll('#posBtns .ghost').forEach(b=>b.classList.toggle('bg-sky-900',b.textContent===p));showQ()}
+function startQuiz(p){qpos=p;qi=0;sc=0;lives=3;gain=0;const pick=(a,n)=>[...a].sort(()=>Math.random()-.5).slice(0,n);qs=[...Q[p],...(QX[p]||[]),...pick(GP[GRP[p]],3),...pick(TACT,3)].map(s=>{const[t,...o]=s.split('|');const op=o.slice(0,3).map((x,i)=>({x,c:i===0}));for(let i=op.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[op[i],op[j]]=[op[j],op[i]]}return{t,opts:op}});document.querySelectorAll('#posBtns .ghost').forEach(b=>b.classList.toggle('bg-sky-900',b.textContent===p));showQ()}
 const lv=()=>Math.min(5,Math.floor(qi*5/qs.length)+1);
 function showQ(end){const b=$('#qbox');if(end||qi>=qs.length){const pct=Math.round(sc/qs.length*100),perf=sc===qs.length,x=gain+(perf?50:0);D.scores[qpos]=Math.max(D.scores[qpos]||0,pct);const a=dayAch();a.quiz=1;if(perf)a.perfect=1;addXP(x);if(perf)confetti();b.innerHTML=`<h3 class="text-4xl ${end?'text-red-400':'glow'}">${end?'OUT OF LIVES':'STAGE CLEAR'} — ${POS[qpos]} ${pct}%</h3><p class="my-3">${sc}/${qs.length} correct · +${x} XP</p><button class="btn" onclick="startQuiz('${qpos}')">Retry</button>`;return}
 const q=qs[qi],L=lv();b.innerHTML=`<div class="flex justify-between text-sm text-sky-300"><span>${POS[qpos]} · Stage ${L}/5 · ${['Trial','Selection','Second Stage','Elite','World Class'][L-1]}</span><span>${'⚡'.repeat(lives)}</span></div><div class="h-1 bg-slate-800 my-2"><div class="h-1 bg-sky-400" style="width:${qi/qs.length*100}%"></div></div><h3 class="text-2xl my-3">${esc(q.t)}</h3>`+q.opts.map((o,i)=>`<button class="opt" onclick="ans(${i},this)">${esc(o.x)}</button>`).join('')}
@@ -195,40 +222,66 @@ const RUNS=[
 {t:'RB (gold): your winger has the ball. Make the overlap run.',ball:[24,-20],me:[24,2],opp:[[28,-22],[16,-26]],to:[31,-30],r:5,y:'Overlap outside the winger to drag the full-back and open the cutback.'},
 {t:'CB (gold): your RB stepped out to press. Cover the space he left.',ball:[28,16],bo:1,me:[-2,38],opp:[[8,10]],to:[14,38],r:5,y:'Cover behind the full-back, goal-side of the runner.'},
 {t:'CDM (gold): their CAM has the ball. Screen the back line.',ball:[0,-2],bo:1,me:[22,12],opp:[[-14,0],[16,-8]],to:[0,10],r:4,y:'Sit between the ball and your goal so the middle is closed.'},
-{t:'ST (gold): winger is at the byline for a cutback. Attack the right zone.',ball:[24,-48],me:[0,-26],opp:[[-6,-40],[8,-42],[20,-44]],to:[5,-39],r:4,y:'Arrive on the penalty spot as the cutback comes, between defenders.'}];
-let B={mode:'form',i:0,V:{'3D':[0,75,92,0,0,6],Top:[0,128,1,0,0,0],Side:[-100,45,0,0,0,0]},v:[0,75,92,0,0,6],L:new THREE.Vector3(),drag:[]};
-const ray=new THREE.Raycaster(),mv=new THREE.Vector2(),pl=new THREE.Plane(new THREE.Vector3(0,1,0),0),cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-function mk(c,d){const g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.3});g.add(new THREE.Mesh(new THREE.CylinderGeometry(2,2,.8,24),m));g.position.y=.5;g.userData.d=d;return g}
-function ln(p,par){const g=new THREE.BufferGeometry().setFromPoints(p.map(q=>new THREE.Vector3(q[0],.1,q[1])));(par||B.s).add(new THREE.Line(g,new THREE.LineBasicMaterial({color:par?0xffd700:0x19c3ff})))}
-const rc=(a,b,c,d)=>ln([[a,b],[c,b],[c,d],[a,d],[a,b]]);
-function init3d(){const el=$('#cv');B.r=new THREE.WebGLRenderer({antialias:true});el.appendChild(B.r.domElement);const s=B.s=new THREE.Scene();s.background=new THREE.Color(0x050a18);B.c=new THREE.PerspectiveCamera(45,1,1,400);
-s.add(new THREE.AmbientLight(0xffffff,.7));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(30,80,40);s.add(dl);
-{const m=new THREE.Mesh(new THREE.PlaneGeometry(68,105),new THREE.MeshStandardMaterial({color:0x0b2a4a}));m.rotation.x=-Math.PI/2;s.add(m)}
-rc(-34,-52.5,34,52.5);ln([[-34,0],[34,0]]);ln([...Array(41)].map((_,i)=>[9.2*Math.cos(i/40*6.2832),9.2*Math.sin(i/40*6.2832)]));rc(-20,-52.5,20,-36);rc(-20,36,20,52.5);rc(-9,-52.5,9,-47);rc(-9,47,9,52.5);
-B.g=new THREE.Group();s.add(B.g);const cv=B.r.domElement;
-const pt=e=>{const r=cv.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,B.c)};
-cv.onpointerdown=e=>{pt(e);const h=ray.intersectObjects(B.drag,true)[0];if(h&&!B.done){let o=h.object;while(!o.userData.d)o=o.parent;B.d=o;cv.setPointerCapture(e.pointerId)}};
-cv.onpointermove=e=>{if(!B.d)return;pt(e);const p=new THREE.Vector3();if(ray.ray.intersectPlane(pl,p)){B.d.position.x=cl(p.x,-33,33);B.d.position.z=cl(p.z,-51,51)}};
-cv.onpointerup=()=>{B.d=null};addEventListener('resize',rs);(function an(){requestAnimationFrame(an);if(!$('#board').classList.contains('on'))return;const v=B.v;B.c.position.set(v[0],v[1],v[2]);B.c.lookAt(v[3],v[4],v[5]);B.r.render(s,B.c)})()}
-function rs(){if(!B.r)return;const el=$('#cv'),w=el.clientWidth,h=el.clientHeight;B.r.setSize(w,h);B.c.aspect=w/h;B.c.updateProjectionMatrix()}
-function bOpen(){const f=!B.r;if(f){$('#bf').innerHTML=Object.keys(FM).map(k=>`<option>${k}</option>`).join('');init3d()}rs();bMode(B.mode);view('Top')}
-function view(k){B.cur=k||(B.cur==='Top'?'3D':'Top');B.v=B.V[B.cur]}
-function clr(){while(B.g.children.length)B.g.remove(B.g.children[0]);B.drag=[];B.run=null;B.done=0;B.d=null;$('#bres').innerHTML='Drag the pieces, then press Check.'}
-function bMode(m){B.mode=m;clr();const sel=$('#bf');sel.style.display=m==='form'?'':'none';
-if(m==='form'){B.f=sel.value;$('#btask').textContent=`Drag all 11 players (gold = goalkeeper) into a ${B.f}. You attack the far goal.`;for(let i=0;i<11;i++){const p=mk(i?0x19c3ff:0xffd700,1);p.position.set(-30+i*6,1.8,28);B.g.add(p);B.drag.push(p)}}
-else{const s=RUNS[B.i%RUNS.length];$('#btask').textContent=s.t;const me=mk(0xffd700,1);me.position.set(s.me[0],1.8,s.me[1]);B.g.add(me);B.drag=[me];const c=mk(s.bo?0xff3b3b:0x19c3ff,0);c.position.set(s.ball[0],1.8,s.ball[1]);B.g.add(c);const bl=new THREE.Mesh(new THREE.SphereGeometry(.9,12,12),new THREE.MeshStandardMaterial({color:0xffffff}));bl.position.set(s.ball[0]+2,1,s.ball[1]);B.g.add(bl);s.opp.forEach(o=>{const p=mk(0xff3b3b,0);p.position.set(o[0],1.8,o[1]);B.g.add(p)})}}
-function tg(f){const R=FM[f],o=[[0,47]],w=[0,0,.42,.62,.78,.88];R.forEach((n,i)=>{const z=50-(.2+.6*i/(R.length-1))*95;for(let j=0;j<n;j++)o.push([n>1?(j/(n-1)*2-1)*w[n]*34:0,z])});return o}
-function ghost(x,z,r){const g=new THREE.Mesh(new THREE.RingGeometry(r-.6,r,32),new THREE.MeshBasicMaterial({color:0xffd700,side:2}));g.rotation.x=-Math.PI/2;g.position.set(x,.2,z);g.userData.p=1;B.g.add(g)}
-function bCheck(){if(B.done)return;B.done=1;let pct,msg;
-if(B.mode==='form'){const T=tg(B.f),P=[...B.drag];let tot=0;T.forEach((t,k)=>{let bi=0,bd=1e9;if(k)P.forEach((p,i)=>{const d=Math.hypot(p.position.x-t[0],p.position.z-t[1]);if(d<bd){bd=d;bi=i}});else bd=Math.hypot(P[0].position.x-t[0],P[0].position.z-t[1]);const p=P.splice(bi,1)[0];tot+=Math.max(0,1-bd/14);ghost(t[0],t[1],2);ln([[p.position.x,p.position.z],t],B.g)});pct=Math.round(tot/11*100);msg='Gold rings show the ideal '+B.f+' spots.'}
-else{const s=RUNS[B.i%RUNS.length],me=B.drag[0],r=s.r*Math.max(.5,1-.08*rk()),d=Math.hypot(me.position.x-s.to[0],me.position.z-s.to[1]);pct=d<=r?Math.round(100-d/r*15):Math.max(0,Math.round(70-(d-r)*5));msg=s.y+' (target zone shrinks as your rank rises)';ghost(s.to[0],s.to[1],r);ln([s.me,s.to],B.g);}
-const xp=pct>=50?Math.round(pct*(.35+rk()*.1)):0;if(xp){addXP(xp);D.scores['3D']=Math.max(D.scores['3D']||0,pct);dayAch().quiz=1;save()}if(pct>=90)confetti();
+{t:'ST (gold): winger is at the byline for a cutback. Attack the right zone.',ball:[24,-48],me:[0,-26],opp:[[-6,-40],[8,-42],[20,-44]],to:[5,-39],r:4,y:'Arrive on the penalty spot as the cutback comes, between defenders.'},
+{t:'LW (gold): your striker is marked. Cut inside to receive between the lines.',ball:[0,-4],me:[-28,-24],opp:[[-10,-30],[2,-30],[14,-30],[-22,-26]],to:[-12,-22],r:5,y:'Come into the half-space behind the midfield, in front of the back line.'},
+{t:'LB (gold): you are free. Provide width as the team switches play.',ball:[20,4],me:[-14,-4],opp:[[10,0],[-4,-6]],to:[-28,-8],r:5,y:'Hold the touchline to stretch the opponent and receive the switch.'}];
+const R='#ff3b3b',BL='#19C3FF';
+const BQ=[
+{q:'Who is the best pass for the ball carrier (with the ball)?',b:[0,10],t:[[-20,-10],[20,-8],[0,-25]],s:[[-18,-12,R],[0,-15,R]],a:1,y:'B is free. A is marked and the lane to C is blocked.'},
+{q:'Switch of play: who is the best target?',b:[-22,-5],t:[[-10,-10],[28,-8],[5,-30]],s:[[-14,-12,R],[-6,-6,R],[6,-28,R]],a:1,y:'The opponent has shifted to the ball side, so go to the free player on the far side.'},
+{q:'Counter-attack 2v2: who gets the pass?',b:[0,-5],t:[[-14,-12],[14,-12]],s:[[-8,-17,R],[0,-27,R]],a:1,y:'A is closed down by a defender; B has space to run into.'},
+{q:'Defending a cross: which attacker (red) is the biggest danger?',b:[28,30],bc:R,t:[[-4,40],[14,44],[-12,42]],tc:R,s:[[12,42,BL],[-10,40,BL]],a:0,y:'He is unmarked on the penalty spot. Pick him up first.'},
+{q:'You lost the ball. Who presses the carrier (red) first?',b:[0,8],bc:R,t:[[4,10],[-14,14],[14,2]],s:[],a:0,y:'The nearest player presses at once while the others cover and block lanes.'},
+{q:'Find the progressive pass between the lines.',b:[0,8],t:[[-26,10],[8,-8],[-8,20]],s:[[-18,-20,R],[0,-20,R],[18,-20,R],[-6,0,R],[12,2,R]],a:1,y:'B receives between midfield and defence. A is wide and C is backward.'},
+{q:'Offside! Who is offside when the pass is played?',b:[0,-5],t:[[-12,-33],[8,-28],[20,-24]],s:[[-24,-30,R],[-8,-30,R],[8,-30,R],[24,-30,R],[0,-50,R]],a:0,y:'Only A is beyond the second-last defender.'},
+{q:'Cutback: who should arrive to score?',b:[26,-50],t:[[-8,-44],[4,-40],[16,-46]],s:[[-6,-42,R],[14,-44,R],[0,-48,R]],a:1,y:'The penalty-spot runner is free; A and C are marked.'},
+{q:'Your team has shifted across. Which opponent (red) is left unmarked?',t:[[-26,0],[-8,-2],[8,-6]],tc:R,s:[[-6,0,BL],[10,-4,BL]],a:0,y:'The far winger has no marker. That is where the switch will go.'},
+{q:'Hard: who is offside this time?',b:[0,-5],t:[[-3,-31],[18,-35],[-15,-28]],s:[[-20,-26,R],[-5,-33,R],[10,-24,R],[25,-28,R],[0,-50,R]],a:1,y:'The deepest outfield defender is at 33m. Only B is beyond him.'}];
+function bqShow(){const b=B.bq,n=BQ.length;
+if(b.i>=n||b.lives<=0){const pct=Math.round(b.sc/n*100),x=b.gain+(b.sc===n?50:0);D.scores.BQ=Math.max(D.scores.BQ||0,pct);dayAch().quiz=1;addXP(x);if(b.sc===n)confetti();B.T=[];B.ball=null;B.ex='';draw();$('#btask').textContent='';$('#bnx').style.display='none';$('#bres').innerHTML=`<div class="bb text-4xl ${b.lives<=0?'text-red-400':'glow'}">${b.lives<=0?'OUT OF LIVES':'QUIZ CLEAR'} — ${pct}%</div><p>${b.sc}/${n} correct · +${x} XP</p><button class="btn mt-2" onclick="bLoad()">Play again</button>`;return}
+const q=BQ[b.i],f=Math.random()<.5?-1:1,P=(x,z,c,d,l)=>({l:l||'',x:34+x*f,y:z+52.5,hx:0,hy:0,c,d});
+B.done=0;B.T=[...(q.b?[P(q.b[0],q.b[1],q.bc||BL,0)]:[]),...q.s.map(a=>P(a[0],a[1],a[2],0)),...q.t.map((a,k)=>P(a[0],a[1],q.tc||BL,1,'ABC'[k]))];
+B.ball=q.b?[34+(q.b[0]+2)*f,q.b[1]+52.5]:null;B.ex=B.T.slice(-q.t.length).map(t=>`<circle cx="${t.x}" cy="${t.y}" r="4.2" fill="none" stroke="#fff" stroke-width=".3" stroke-dasharray="1 .8"/>`).join('');
+const L=Math.min(5,Math.floor(b.i*5/n)+1);$('#btask').innerHTML=`Stage ${L}/5 · ${'⚡'.repeat(b.lives)} — ${esc(q.q)}`;$('#bres').textContent='Tap the player you choose (A, B or C).';$('#bnx').style.display='none';draw()}
+function bqAns(i){const b=B.bq,q=BQ[b.i],L=Math.min(5,Math.floor(b.i*5/BQ.length)+1),base=B.T.length-q.t.length,ok=i-base===q.a;B.done=1;if(ok){b.sc++;b.gain+=10*L}else b.lives--;
+const g=B.T[base+q.a],c=B.T[i];B.ex=`<circle cx="${g.x}" cy="${g.y}" r="4.6" fill="#FFD70022" stroke="#FFD700" stroke-width=".5"/>`+(ok?'':`<circle cx="${c.x}" cy="${c.y}" r="4.6" fill="none" stroke="#ff3b3b" stroke-width=".5"/>`);draw();
+$('#bres').innerHTML=`<div class="bb text-3xl ${ok?'glow':'text-red-400'}">${ok?'CORRECT +'+10*L+' XP':'NOT QUITE'}</div><p>${q.y}</p>`;$('#bnx').style.display=''}
+let B={mode:'explore',f:'4-3-3',T:[],ex:'',i:0,done:0,hint:0,d:null,init:0,ball:null};
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+const LBL={'4-3-3':[['LB','CB','CB','RB'],['CM','DM','CM'],['LW','ST','RW']],'4-4-2':[['LB','CB','CB','RB'],['LM','CM','CM','RM'],['ST','ST']],'3-5-2':[['CB','CB','CB'],['LWB','CM','DM','CM','RWB'],['ST','ST']],'4-2-3-1':[['LB','CB','CB','RB'],['DM','DM'],['LW','CAM','RW'],['ST']],'5-3-2':[['LWB','CB','CB','CB','RWB'],['CM','DM','CM'],['ST','ST']],'3-4-3':[['CB','CB','CB'],['LM','CM','CM','RM'],['LW','ST','RW']],'4-1-2-1-2':[['LB','CB','CB','RB'],['DM'],['CM','CM'],['CAM'],['ST','ST']],'4-5-1':[['LB','CB','CB','RB'],['LM','CM','CM','CM','RM'],['ST']]};
+const DESC={'4-3-3':'Width from the wingers, a holding midfielder and two box-to-box eights.','4-4-2':'Two flat banks of four with a strike partnership up front.','3-5-2':'Wing-backs give the width; three centre-backs and a crowded midfield.','4-2-3-1':'A double pivot shields the back four behind a creative number ten.','5-3-2':'A compact back five that counters through two strikers.','3-4-3':'Aggressive width: a front three with a back three behind.','4-1-2-1-2':'A diamond midfield: narrow but strong through the centre.','4-5-1':'A packed midfield with one striker and disciplined lines.'};
+function spots(f){const R=FM[f],L=LBL[f],o=[['GK',34,99.5]],w=[0,0,.42,.62,.78,.88];R.forEach((n,i)=>{const y=102.5-(.2+.6*i/(R.length-1))*95;for(let j=0;j<n;j++){const l=L[i][j];o.push([l,34+(n>1?(j/(n-1)*2-1)*w[n]*34:0),y+(l==='DM'&&n>1&&L[i].some(x=>x!=='DM')?7:0)])}});return o}
+const cv=p=>[p[0]+34,p[1]+52.5];
+function bLoad(){B.done=0;B.hint=0;B.ex='';B.d=null;B.ball=null;const m=B.mode,P=(l,x,y,c,d)=>({l,x,y,hx:x,hy:y,c,d});
+$('#bmodes').innerHTML=[['explore','Explore'],['form','Formation Challenge'],['run','Run Challenge'],['bq','Board Quiz']].map(a=>`<button class="pill ${m===a[0]?'on':''}" onclick="B.mode='${a[0]}';bLoad()">${a[1]}</button>`).join('');
+$('#btabs').innerHTML=m==='run'||m==='bq'?'':Object.keys(FM).map(k=>`<button class="pill ${k===B.f?'on':''}" onclick="B.f='${k}';bLoad()">${k}</button>`).join('');
+$('#bchk').style.display=m==='explore'||m==='bq'?'none':'';$('#bnx').style.display=m==='explore'||m==='bq'?'none':'';$('#bdemo').style.display=m==='run'?'':'none';
+if(m==='bq'){B.bq={i:0,sc:0,lives:3,gain:0};$('#bcap').textContent='Tactical questions on the board. Difficulty rises each stage.';bqShow();return}
+if(m==='explore'){B.T=spots(B.f).map(a=>P(a[0],a[1],a[2],'#fff',1));$('#btask').textContent='Drag any player. Drag it again to reshape its run.';$('#bcap').textContent=B.f+' — '+DESC[B.f];$('#bres').textContent='Runs are drawn from each player\'s starting spot to where you drop them.'}
+else if(m==='form'){B.T=spots(B.f).map((a,i)=>P(a[0],6+i*5.6,84,i?'#fff':'#FFD700',1));$('#btask').textContent='Drag all 11 players into a '+B.f+'. You attack the top goal.';$('#bcap').textContent='';$('#bres').textContent='Place everyone, then press Check.'}
+else{const s=RUNS[B.i%RUNS.length],a=cv(s.me);B.T=[P('YOU',a[0],a[1],'#FFD700',1),...[s.ball].map(b=>{const c=cv(b);return P('',c[0],c[1],s.bo?'#ff3b3b':'#19C3FF',0)}),...s.opp.map(o=>{const c=cv(o);return P('',c[0],c[1],'#ff3b3b',0)})];B.ball=cv([s.ball[0]+2,s.ball[1]]);$('#btask').textContent=s.t;$('#bcap').textContent='Red = opponents. Blue/red with the ball = carrier.';$('#bres').textContent='Drag YOU to the best spot, then press Check.'}
+draw()}
+function draw(){let h='<defs><filter id="gl" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><marker id="ah" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0 0L4 2L0 4z" fill="#19C3FF"/></marker></defs><g fill="none" stroke="#19c3ff22" stroke-width=".3"><rect x=".5" y=".5" width="67" height="104"/><line x1="0" y1="52.5" x2="68" y2="52.5"/><circle cx="34" cy="52.5" r="9"/></g>';
+if(B.mode==='explore')B.T.forEach(t=>{const d=Math.hypot(t.x-t.hx,t.y-t.hy);if(d>3){const k=(d-3.4)/d;h+=`<line x1="${t.hx}" y1="${t.hy}" x2="${t.hx+(t.x-t.hx)*k}" y2="${t.hy+(t.y-t.hy)*k}" stroke="#19C3FF" stroke-width=".5" stroke-dasharray="1.5 1" marker-end="url(#ah)"/><circle cx="${t.hx}" cy="${t.hy}" r="1" fill="#19C3FF55"/>`}});
+h+=B.ex;if(B.ball)h+=`<circle cx="${B.ball[0]}" cy="${B.ball[1]}" r="1.1" fill="#fff"/>`;
+B.T.forEach((t,i)=>{h+=`<g ${t.d?`data-i="${i}" style="cursor:grab"`:''} filter="url(#gl)"><circle cx="${t.x}" cy="${t.y}" r="3" fill="${t.c}"/><text x="${t.x}" y="${t.y+.8}" text-anchor="middle" font-size="${t.l.length>2?1.9:2.2}" font-weight="800" fill="#050A18" pointer-events="none">${t.l}</text></g>`});
+$('#bsv').innerHTML=h}
+function runEx(s,r){const a=cv(s.me),b=cv(s.to);return `<circle cx="${b[0]}" cy="${b[1]}" r="${r||s.r}" fill="#FFD70022" stroke="#FFD700" stroke-width=".4"/><line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#FFD700" stroke-width=".5" stroke-dasharray="1.5 1"/><circle r="2.2" fill="#FFD700" opacity=".7"><animate attributeName="cx" from="${a[0]}" to="${b[0]}" dur="2s" repeatCount="indefinite"/><animate attributeName="cy" from="${a[1]}" to="${b[1]}" dur="2s" repeatCount="indefinite"/></circle>`}
+function bCheck(){if(B.done||B.mode==='explore')return;B.done=1;let pct,msg,ex='';
+if(B.mode==='form'){const S=spots(B.f),P=B.T.map((t,i)=>i);let tot=0;S.forEach((q,k)=>{let bi=0,bd=1e9;if(k)P.forEach((p,i)=>{const t=B.T[p],d=Math.hypot(t.x-q[1],t.y-q[2]);if(d<bd){bd=d;bi=i}});else bd=Math.hypot(B.T[0].x-q[1],B.T[0].y-q[2]);const t=B.T[P.splice(bi,1)[0]];tot+=Math.max(0,1-bd/14);ex+=`<circle cx="${q[1]}" cy="${q[2]}" r="3.8" fill="none" stroke="#FFD700" stroke-width=".4" stroke-dasharray="1 .8"/><line x1="${t.x}" y1="${t.y}" x2="${q[1]}" y2="${q[2]}" stroke="#FFD700" stroke-width=".3" opacity=".6"/>`});pct=Math.round(tot/11*100);msg='Gold rings show the ideal '+B.f+'.'}
+else{const s=RUNS[B.i%RUNS.length],to=cv(s.to),me=B.T[0],r=s.r*Math.max(.5,1-.08*rk()),d=Math.hypot(me.x-to[0],me.y-to[1]);pct=d<=r?Math.round(100-d/r*15):Math.max(0,Math.round(70-(d-r)*5));msg=s.y+' (target zone shrinks as your rank rises)';ex=runEx(s,r)}
+B.ex=ex;draw();const xp=pct>=50?Math.round(pct*(.35+rk()*.1)*(B.hint?.5:1)):0;if(xp){addXP(xp);D.scores['3D']=Math.max(D.scores['3D']||0,pct);dayAch().quiz=1;save()}if(pct>=90)confetti();
 $('#bres').innerHTML=`<div class="bb text-5xl glow">${pct}%</div><p>${msg}</p><p class="text-sky-300 text-sm">${xp?'+'+xp+' XP':'Score 50%+ to earn XP'}</p>`}
-function bNext(){const sel=$('#bf');if(B.mode==='form'){sel.selectedIndex=Math.floor(Math.random()*sel.options.length)}else B.i++;bMode(B.mode)}
+function bHint(){if(B.mode!=='run'||B.done)return;B.hint=1;B.ex=runEx(RUNS[B.i%RUNS.length]);draw();$('#bres').textContent='Demo shown. XP for this try is halved.'}
+function bNext(){if(B.mode==='bq'){B.bq.i++;bqShow();return}if(B.mode==='form'){const k=Object.keys(FM);B.f=k[Math.floor(Math.random()*k.length)]}else B.i++;bLoad()}
+function bOpen(){if(!B.init){B.init=1;const sv=$('#bsv'),pp=e=>{const p=sv.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(sv.getScreenCTM().inverse())};
+sv.onpointerdown=e=>{const g=e.target.closest('[data-i]');if(!g||(B.done&&B.mode!=='explore'))return;if(B.mode==='bq'){bqAns(+g.dataset.i);return}B.d=+g.dataset.i;sv.setPointerCapture(e.pointerId)};
+sv.onpointermove=e=>{if(B.d==null)return;const p=pp(e),t=B.T[B.d];t.x=cl(p.x,3,65);t.y=cl(p.y,3,102);draw()};
+sv.onpointerup=sv.onpointercancel=()=>{B.d=null}}bLoad()}
 /* INIT */
 $('#feats').innerHTML=[['🧠','Position Quizzes','Every position, real match situations, rising difficulty.'],['🏋️','Tailored Drills','Built from your position, body and weaknesses.'],['📈','Rating Graph','Watch your overall rating climb.']].map(f=>`<div class="glass p-6 card reveal"><div class="text-4xl">${f[0]}</div><h3 class="text-2xl mt-2">${f[1]}</h3><p class="text-sky-200">${f[2]}</p></div>`).join('');
 $('#ranksG').innerHTML=RANKS.map(r=>`<div class="glass p-4 text-center card reveal"><div class="bb text-2xl text-yellow-300">${r[0]}</div><div class="text-xs">${r[1]}+ XP</div></div>`).join('');
-$('#legends').innerHTML=Object.keys(LEG).map(c=>`<div class="glass p-3 card reveal"><div class="bb text-xl glow">${c}</div><div class="text-xs text-sky-200">${LEG[c]}</div></div>`).join('');
+$('#legends').innerHTML=Object.keys(LEG).map(c=>`<div class="glass p-3 card reveal lg"><div class="bb text-xl glow">${c}</div><div class="text-xs text-sky-200">${LEG[c]}</div></div>`).join('');
 $('#quote').textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
 if(window.google&&CLIENT_ID.indexOf('YOUR')<0){google.accounts.id.initialize({client_id:CLIENT_ID,callback:gcb});google.accounts.id.renderButton($('#gbtn'),{theme:'filled_black'})}
 addEventListener('load',()=>{if(window.google&&CLIENT_ID.indexOf('YOUR')<0){google.accounts.id.initialize({client_id:CLIENT_ID,callback:gcb});google.accounts.id.renderButton($('#gbtn'),{theme:'filled_black'})}
