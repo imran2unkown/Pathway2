@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Player Path — Train Your Football Brain</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--pitch:#050A18;--neon:#19C3FF;--gold:#FFD700}
+body{font-family:Inter,sans-serif;background:var(--pitch);color:#E8F5E9;overflow-x:hidden}
+h1,h2,h3,.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+.glass{background:rgba(5,10,24,.6);backdrop-filter:blur(14px);border:1px solid rgba(0,255,136,.18);border-radius:16px}
+.btn{background:linear-gradient(135deg,#19C3FF,#0A7FD6);color:#020510;font-weight:700;padding:.6rem 1.2rem;border-radius:10px;transition:.2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,255,136,.5)}
+.ghost{border:1px solid #19C3FF;color:#19C3FF;padding:.6rem 1.2rem;border-radius:10px}
+.card{transition:.3s}.card:hover{transform:translateY(-5px);box-shadow:0 18px 40px #0008,0 0 22px #19c3ff26}
+.page{display:none;animation:up .5s}.page.on{display:block}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.opt{display:block;width:100%;text-align:left;padding:.8rem 1rem;margin:.5rem 0;border-radius:10px;border:1px solid #19c3ff44;background:#0B1630;transition:.2s}
+.opt:hover{border-color:#19C3FF;background:#12234A}
+.ok{background:#19c3ff33!important;border-color:#19C3FF!important}.bad{background:#ff3b3b33!important;border-color:#FF3B3B!important;animation:sh .4s}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+input,select,textarea{background:#0B1630;border:1px solid #19c3ff44;border-radius:8px;padding:.5rem .7rem;width:100%;color:#fff}
+.glow{text-shadow:0 0 18px #19c3ff99;color:#19C3FF}
+.orb{position:absolute;width:320px;height:320px;border-radius:50%;filter:blur(90px);opacity:.3;animation:fl 12s infinite ease-in-out}
+@keyframes fl{50%{transform:translate(30px,-30px)}}
+.reveal{opacity:0;transform:translateY(24px);transition:.7s}.reveal.v{opacity:1;transform:none}
+#prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#19C3FF,#1E90FF,#FFD700);z-index:99}
+#loader{position:fixed;inset:0;background:var(--pitch);z-index:100;display:flex;align-items:center;justify-content:center;transition:.6s}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+body{background:radial-gradient(circle at 15% 0,#0d2a6b66,transparent 50%),radial-gradient(circle at 90% 60%,#0a7fd633,transparent 45%),#050A18}
+h1,h2{font-style:italic;transform:skewX(-6deg)}
+.glass:not(nav){clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
+.btn,.ghost{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(100deg,transparent,#fff8,transparent);transform:skewX(-20deg);animation:sw 3s infinite}
+@keyframes sw{60%,100%{left:140%}}
+.glitch{position:relative;display:inline-block}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;left:0;top:0;width:100%;overflow:hidden}
+.glitch::before{color:#ff3b6b;animation:gl 3s infinite steps(1);clip-path:inset(0 0 60% 0)}
+.glitch::after{color:#19c3ff;animation:gl 2.4s infinite steps(1) reverse;clip-path:inset(60% 0 0 0)}
+@keyframes gl{0%,90%{transform:none}92%{transform:translate(-4px,2px)}95%{transform:translate(4px,-2px)}}
+.banner{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;pointer-events:none}
+.banner div{font-family:'Bebas Neue';font-size:4.5rem;color:#FFD700;text-shadow:0 0 30px #FFD700;animation:pop 2.4s forwards}
+@keyframes pop{0%{transform:scale(.3);opacity:0}20%{transform:scale(1.2);opacity:1}80%{opacity:1}100%{transform:scale(1);opacity:0}}
+.ball{display:inline-block;animation:bn 1.4s infinite ease-in-out}@keyframes bn{50%{transform:translateY(-12px) rotate(180deg)}}
+.lock{opacity:.45}
+.btn::after,.glitch::before,.glitch::after{display:none}
+.ball,.orb,.bad{animation:none}.card:hover{transform:none}
+</style></head><body>
+<div id="prog"></div>
+<div id="loader"><div class="bb text-4xl glow">⚽ PLAYER PATH</div></div>
+<nav class="sticky top-0 z-50 glass flex items-center justify-between px-5 h-16 rounded-none" style="clip-path:none">
+ <div class="bb text-2xl glow cursor-pointer" onclick="go('home')">⚽ PLAYER PATH</div>
+ <div id="navR" class="flex gap-3 items-center text-sm"></div>
+</nav>
+<main class="max-w-6xl mx-auto px-4 py-8">
+
+<section id="home" class="page on">
+ <div class="relative text-center py-16"><div class="orb bg-sky-400 -top-10 left-0"></div><div class="orb bg-blue-500 top-20 right-0"></div>
+  <h1 class="text-6xl md:text-8xl relative">TRAIN <span class="glow">TO WIN</span></h1>
+  <p class="mt-4 text-lg text-sky-200 relative">Position quizzes, a simple 3D tactics board and drills built for you. Train smart. Play sharp. Win.</p>
+  <button class="btn mt-8 relative" onclick="go(user?'dash':'login')">Start Your Path</button></div>
+ <div class="grid md:grid-cols-3 gap-5" id="feats"></div>
+ <h2 class="text-4xl mt-14 mb-4">RANKS</h2><div class="grid grid-cols-2 md:grid-cols-6 gap-3" id="ranksG"></div>
+ <h2 class="text-4xl mt-14 mb-4">WORDS OF THE GREATS</h2><div class="glass p-6 text-center text-xl italic" id="quote"></div>
+ <h2 class="text-4xl mt-14 mb-4">LEGENDS BY POSITION</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="legends"></div>
+</section>
+
+<section id="login" class="page"><div class="glass p-8 max-w-md mx-auto text-center">
+ <h2 class="text-4xl mb-4">LOG IN</h2><div id="gbtn" class="flex justify-center mb-4"></div>
+ <p class="text-sm text-sky-300 mb-3">or continue with your Gmail address</p>
+ <input id="em" type="email" placeholder="you@gmail.com"><button class="btn w-full mt-3" onclick="emailLogin()">Continue</button></div></section>
+
+<section id="dash" class="page">
+ <div class="grid md:grid-cols-4 gap-4" id="stats"></div><div class="glass p-4 mt-4" id="rbar"></div>
+ <div class="grid md:grid-cols-2 gap-5 mt-5">
+  <div class="glass p-5"><h3 class="text-2xl mb-2">RATING GRAPH</h3><svg id="graph" viewBox="0 0 300 120" class="w-full"></svg></div>
+  <div class="glass p-5"><h3 class="text-2xl mb-2">DAILY ACHIEVEMENTS</h3><div id="ach"></div></div></div>
+ <div class="glass p-5 mt-5"><h3 class="text-2xl mb-2">QUOTE</h3><p id="dq" class="italic"></p></div>
+</section>
+
+<section id="quiz" class="page"><div class="flex flex-wrap gap-2 mb-4" id="posBtns"></div><div id="qbox" class="glass p-6"></div></section>
+
+<section id="train" class="page"><h2 class="text-4xl mb-1">TRAINING</h2><p class="text-sky-300 mb-4" id="trainSub"></p><div class="grid md:grid-cols-2 gap-4" id="drills"></div></section>
+
+<section id="notes" class="page"><h2 class="text-4xl mb-3">NOTES</h2>
+ <div class="glass p-5 mb-4"><select id="nt" class="mb-2"><option>Game</option><option>Practice</option></select><textarea id="nb" rows="3" placeholder="What went well? What to fix?"></textarea><button class="btn mt-2" onclick="addNote()">Save Note</button></div><div id="nl" class="space-y-3"></div></section>
+
+<section id="profile" class="page"><div class="glass p-6 max-w-xl mx-auto"><h2 class="text-4xl mb-3">PROFILE</h2>
+ <div class="flex items-center gap-4 mb-4"><img id="pic" class="w-24 h-24 rounded-full border-2 border-sky-400 object-cover bg-sky-900" alt=""><input type="file" accept="image/*" onchange="pickPic(this)"></div>
+ <div class="grid grid-cols-2 gap-3">
+ <label>Name<input id="pn"></label><label>Team<input id="pt"></label>
+ <label>Position<select id="pp"></select></label><label>Height (cm)<input id="ph" type="number"></label>
+ <label>Weight (kg)<input id="pw" type="number"></label><label>Main weakness<select id="pk"><option>speed</option><option>power</option><option>dribbling</option><option>weak foot</option><option>shooting</option><option>position</option></select></label></div>
+ <button class="btn mt-4" onclick="saveProfile()">Save</button> <button class="ghost mt-4" onclick="logout()">Log out</button></div></section>
+<section id="board" class="page"><h2 class="text-4xl mb-2">3D TACTICS BOARD</h2>
+<div class="flex flex-wrap gap-2 mb-3 items-center"><button class="ghost" onclick="bMode('form')">Formations</button><button class="ghost" onclick="bMode('run')">Runs</button><select id="bf" style="width:auto" onchange="bMode('form')"></select><span class="flex-1"></span><button class="ghost" onclick="view()">Switch view</button></div>
+<div class="glass p-3 mb-3" id="btask"></div><div id="cv" class="glass overflow-hidden" style="height:min(70vh,520px);touch-action:none;padding:0"></div>
+<div class="flex gap-3 mt-3"><button class="btn" onclick="bCheck()">Check</button><button class="ghost" onclick="bNext()">Next</button></div><div id="bres" class="glass p-4 mt-3"></div></section>
+</main>
+<footer class="text-center text-sm text-sky-700 py-8">© 2026 Player Path</footer>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const CLIENT_ID="YOUR_GOOGLE_CLIENT_ID_HERE";
+let user=null,D=null;
+const K=e=>'playerpath::'+e;
+function load(e){try{return JSON.parse(localStorage.getItem(K(e)))}catch(x){return null}}
+function save(){try{localStorage.setItem(K(user),JSON.stringify(D))}catch(x){}}
+function toast(m){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:80px;right:20px;z-index:99;background:#050A18;border:1px solid #19C3FF;color:#19C3FF;padding:12px 18px;border-radius:12px';document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
+function confetti(){for(let i=0;i<50;i++){const c=document.createElement('div');c.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}vw;width:9px;height:9px;background:${['#19C3FF','#FFD700','#1E90FF','#fff'][i%4]};z-index:99;pointer-events:none`;c.animate([{transform:'translateY(0)'},{transform:'translateY(105vh) rotate(700deg)',opacity:0}],{duration:2000+Math.random()*1500});document.body.appendChild(c);setTimeout(()=>c.remove(),3600)}}
+
+const POS={GK:'Goalkeeper',CB:'Centre-Back',LB:'Left-Back',RB:'Right-Back',LWB:'Left Wing-Back',RWB:'Right Wing-Back',CDM:'Defensive Mid',CM:'Centre Mid',CAM:'Attacking Mid',LM:'Left Mid',RM:'Right Mid',LW:'Left Winger',RW:'Right Winger',CF:'Centre Forward',ST:'Striker'};
+const LEG={GK:'Yashin, Buffon, Neuer',CB:'Maldini, Baresi, Van Dijk',LB:'Roberto Carlos, Maldini',RB:'Cafu, Lahm',LWB:'Roberto Carlos',RWB:'Cafu',CDM:'Makélélé, Busquets',CM:'Xavi, Iniesta, Modrić',CAM:'Zidane, Maradona, Pelé',LM:'Giggs, Figo',RM:'Beckham, Figo',LW:'Neymar, Messi, Ronaldinho',RW:'Messi, Garrincha',CF:'Cruyff, Ronaldo Nazário',ST:'Cristiano Ronaldo, Pelé, Gerd Müller'};
+const QUOTES=['"Talent without working hard is nothing." — Cristiano Ronaldo','"The more you practise, the luckier you get." — Gary Player','"You have to fight to reach your dream." — Lionel Messi','"Football is a game of mistakes. Whoever makes fewer wins." — Johan Cruyff','"Everything is practice." — Pelé','"I learned all about life with a ball at my feet." — Ronaldinho'];
+const RANKS=[['Reserve',0],['Wildcard',200],['Striker',600],['Captain',1500],['Champion',3500],['World #1',7000]];
+const rk=()=>RANKS.indexOf(rankOf(D.xp));function banner(t){const b=document.createElement('div');b.className='banner';b.innerHTML='<div>'+t+'</div>';document.body.appendChild(b);setTimeout(()=>b.remove(),2500)}
+const rankOf=x=>[...RANKS].reverse().find(r=>x>=r[1]);
+
+/* Quiz data: "situation|correct|wrong|wrong" — 3 levels (easy→hard); order is shuffled at runtime */
+const Q={
+GK:["Low shot to your near post. Priority?|Set feet, dive with strong low hand|Dive early|Stay upright","1v1, attacker shaping to shoot far post.|Stay big, delay, react to his touch|Dive early|Drop to your knees","Corner: set-piece with a crowd at the near post. Best starting spot?|Goal line, central, ready to attack the ball|Penalty spot|Edge of box"],
+CB:["Winger cuts inside, your full-back steps out. You?|Cover the space he left|Press too|Drop to goal line","Ball over your head, striker 5 yards ahead.|Turn, sprint, shield the ball|Slide from behind|Foul him","3v2 counter, you and partner back.|Delay, stay compact, force wide|Both press|Man-mark"],
+LB:["Opposing RW runs at you, CB covers centrally.|Jockey and show him inside|Dive in|Drop and let him cross","Winger holds the ball under press. Overlap when?|When he lifts his head|Immediately|Never","Your team loses the ball high, winger is far from you.|Recover into a compact line, covering the cutback|Stay high|Chase the ball alone"],
+RB:["Opposing LW isolates you.|Jockey, show him wide away from goal|Dive in|Back off fully","Overlapping run: how to avoid being exposed?|Keep your CB or a midfielder covering behind you|Go every time|Never go","Switch of play arrives to your side.|Check shoulder, scan, then play first-time|Take 3 touches|Hoof it"],
+LWB:["Wing-back's main duty in a back five?|Cover the whole flank up and down|Stay deep|Play as striker","Your team is defending a lead.|Drop in line with CBs|Stay high|Leave early","You get the ball in the final third with 2 runners.|Cross low to the penalty spot / cutback|Always shoot|Hold it"],
+RWB:["Wing-back's main duty in a back five?|Cover the whole flank up and down|Stay deep|Play as striker","Winger drifts inside, space opens.|Overlap into the channel|Follow him|Stay still","Opponent counter on your side.|Sprint back and delay|Walk back|Wait for CB"],
+CDM:["Ball is lost in midfield.|Screen the back line, delay the attack|Join the press far|Stand still","Receiving between the lines under pressure.|Scan first, open body, play one-touch|Turn blindly|Hold the ball","Your CB steps out to press.|Drop into the gap he left|Stay put|Press too"],
+CM:["You receive with your back to goal.|Scan, use a lay-off, then move|Dribble through|Hold it","Team is 1-0 down, 20 min left.|Raise tempo, play forward earlier|Slow it down|Play only backward","Compact opponent block, no space centrally.|Switch play to the wide player|Force it centrally|Shoot from distance"],
+CAM:["Pocket of space between the lines.|Show for the ball on your half-turn|Drop deep|Wait wide","Defenders sit deep, striker is marked.|Arrive late into the box|Stay outside|Pass sideways forever","You see a CB step out.|Play the through ball in behind|Hold on|Pass back"],
+LM:["Defending, full-back overlapped.|Track back and cover|Stay high|Walk","Tight on the touchline.|Dribble inside or play a one-two|Cross blind|Hoof it","Team in possession, space on far side.|Hold width and stretch the line|Come inside|Stand in the middle"],
+RM:["Defending, full-back overlapped.|Track back and cover|Stay high|Walk","Opponent presses your wide receive.|Take the first touch away from pressure|Control with the wrong foot|Hit it long","Space in behind the full-back.|Make a diagonal run|Stand still|Drop deeper"],
+LW:["1v1 against the full-back.|Show the ball, change pace, go|Stand still|Pass back","Cutback option and far-post runner both open.|Pick the higher-probability cutback|Always shoot|Cross high"],
+RW:["1v1 against the full-back.|Show the ball, change pace, go|Stand still|Pass back","Defender sits on your strong foot.|Use the weak foot or cut inside to the strong foot|Force the strong foot|Give it away"],
+CF:["Ball into feet with a defender on your back.|Shield, lay off, then spin|Turn blind|Give it away","Wide player has the ball, you are central.|Time the run across the near post|Wait at the penalty spot|Drop deep","Team is pressing high.|Close the CB so the pass is forced wide|Stand still|Press the keeper only"],
+ST:["Ball in the air and the CB is behind you.|Check away then spin on the shoulder|Wait|Foul him","One-on-one with the keeper.|Stay calm, pick a corner, side-foot placement|Blast it|Chip every time","Pressing from the front.|Force the CB onto his weak foot and cut passing lane|Stand still|Press the keeper only"]
+};
+const DRILLS={speed:['Ladder + 10m sprints x6','Hill sprints 8x20m','Flying 30m sprints x6, full rest','Resisted sled sprints 6x15m','Reaction starts: 10 random-cue sprints','Repeat sprints: 12 x 30m every 30s'],power:['Squat jumps 3x10','Medicine-ball throws 3x8','Box jumps 4x6','Sled push intervals 6x20m','Trap-bar deadlift (coach-led) 4x5','Plyometric bounds + sprint, 5 rounds'],dribbling:['Cone weave, both feet x10','Close-control juggling 5 min','1v1 box 3x2 min','Tight-space turns: 5 moves x 20','1v2 escape drill, 10 rounds','Speed-dribble gates under 12s'],'weak foot':['Wall passes weak foot, 100 reps','Weak-foot receive and pass triangle','Weak-foot finishing 3x10','Weak-foot crosses, 20 reps','Weak-foot volleys 3x8','Weak-foot finishing under defender pressure'],shooting:['Corner targets, 10 each','Side-foot placement, 20 reps','Volleys from crosses 3x8','First-time cutback finishes x15','Long-range curlers x15','Pressured 1v1 vs keeper x12'],position:['Shadow play in your zone, 10 min','Scan-and-check every 5 s','Study a legend and copy 5 movement patterns','Positioning grid: react to the ball 15 min','Small-sided 4v4 with position limits','Full walk-through of a chosen formation']};
+const POSD={GK:'Dive and recovery ladder',CB:'Header + recovery sprints',LB:'Overlap-and-cross runs',RB:'Overlap-and-cross runs',LWB:'Stamina shuttles',RWB:'Stamina shuttles',CDM:'Rondo in the middle',CM:'Pass-and-move squares',CAM:'Through-ball patterns',LM:'Wide 1v1s',RM:'Wide 1v1s',LW:'1v1 dribble finish',RW:'1v1 dribble finish',CF:'Hold-up and lay-off',ST:'Finishing circuits'};
+
+/* NAV / ROUTER */
+function go(p){document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));$('#'+p).classList.add('on');window.scrollTo(0,0);if(p==='dash')renderDash();if(p==='quiz')renderQuiz();if(p==='train')renderTrain();if(p==='notes')renderNotes();if(p==='profile')renderProfile();if(p==='board')bOpen()}
+function nav(){const n=$('#navR');n.innerHTML=user?['dash:Dashboard','quiz:Quizzes','board:3D Board','train:Training','notes:Notes','profile:Profile'].map(x=>{const[a,b]=x.split(':');return`<button class="text-sky-200 hover:text-sky-400" onclick="go('${a}')">${b}</button>`}).join(''):'<button class="btn" onclick="go(\'login\')">Log in</button>'}
+/* AUTH */
+function signIn(email){user=email.toLowerCase();D=load(user)||{xp:0,hist:[],scores:{},notes:[],prof:{pos:'ST',pk:'speed'},days:{}};save();localStorage.setItem('pp::last',user);nav();go('dash');confetti()}
+function emailLogin(){const e=$('#em').value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return toast('Enter a valid email');signIn(e)}
+function logout(){user=null;D=null;localStorage.removeItem('pp::last');nav();go('home')}
+function gcb(r){try{const p=JSON.parse(atob(r.credential.split('.')[1]));signIn(p.email)}catch(e){toast('Google sign-in failed')}}
+/* STATS */
+function avg(){const v=Object.values(D.scores);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0}
+function rating(){return Math.min(99,Math.round(40+avg()*0.25+Math.sqrt(D.xp)*0.45))}
+function dayAch(){return D.days[today()]||(D.days[today()]={quiz:0,perfect:0,drill:0,note:0,dn:[]})}
+function addXP(n){const before=rankOf(D.xp)[0];D.xp+=n;D.hist.push(rating());D.hist=D.hist.slice(-20);save();if(rankOf(D.xp)[0]!==before){banner('RANK UP: '+rankOf(D.xp)[0].toUpperCase());confetti()}}
+function renderDash(){const r=rating(),rk=rankOf(D.xp);
+$('#stats').innerHTML=[['RATING',r],['FOOTBALL IQ',avg()+'%'],['XP',D.xp],['RANK',rk[0]]].map(s=>`<div class="glass p-5 text-center card"><div class="text-sm text-sky-300">${s[0]}</div><div class="bb text-5xl glow ${typeof s[1]=='number'?'cu':''}" data-v="${s[1]}">${s[1]}</div></div>`).join('');
+const h=D.hist.length?D.hist:[r],pts=h.map((v,i)=>`${h.length>1?i*300/(h.length-1):150},${115-(v-30)*1.5}`).join(' ');
+$('#graph').innerHTML=`<polyline points="${pts}" fill="none" stroke="#19C3FF" stroke-width="3"/>`+h.map((v,i)=>`<circle cx="${h.length>1?i*300/(h.length-1):150}" cy="${115-(v-30)*1.5}" r="3" fill="#FFD700"/>`).join('');
+const a=dayAch();$('#ach').innerHTML=[['Finish a quiz',a.quiz],['Get a perfect quiz',a.perfect],['Complete a drill',a.drill],['Write a note',a.note]].map(x=>`<div class="flex justify-between py-1 border-b border-sky-900"><span>${x[0]}</span><span>${x[1]?'✅':'⬜'}</span></div>`).join('');
+$('#dq').textContent=QUOTES[new Date().getDate()%QUOTES.length];
+const ri=RANKS.indexOf(rk),nx=RANKS[ri+1];$('#rbar').innerHTML=nx?`<div class="flex justify-between text-sm mb-1"><span>${rk[0]}</span><span>${nx[1]-D.xp} XP to ${nx[0]}</span></div><div class="h-3 bg-slate-800"><div class="h-3 bg-sky-400" style="width:${(D.xp-rk[1])/(nx[1]-rk[1])*100}%;transition:width 1.2s"></div></div>`:'<b class="text-yellow-300">MAX RANK — WORLD #1</b>';
+document.querySelectorAll('.cu').forEach(e=>{const to=+e.dataset.v,t0=performance.now();(function f(t){const p=Math.min((t-t0)/1100,1);e.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)})}
+/* QUIZ */
+let qs=[],qi=0,sc=0,qpos='',lives=3,gain=0;
+const GRP={GK:'gk',CB:'def',LB:'def',RB:'def',LWB:'def',RWB:'def',CDM:'mid',CM:'mid',CAM:'mid',LM:'mid',RM:'mid',LW:'att',RW:'att',CF:'att',ST:'att'};
+const GP={gk:["Opponent breaks 1v1, ball bounces, you're off your line.|Retreat watching the ball, stay set|Sprint straight at him|Freeze","Back-pass from your CB under press.|Clear first-time to the safe side|Dribble the striker|Hold it","Free kick 25 yards, central, wall of 4.|Cover the open side, trust the wall|Hide behind the wall|Stay on one post","Cross to the far post, you're central.|Step toward it, call early, catch with two hands|Stay on the line|Rush the near post","Shot from a tight angle.|Close the near post first, stay big|Cover the far post|Dive before the shot"],
+def:["Pass splits you and your partner.|Communicate: one steps, one covers|Both step|Both stay","Your line is high, striker starts onside.|Step up together on the trigger to trap him offside|Drop one by one|Ignore him","2v1 overload on your flank.|Delay, force wide, wait for cover|Dive in|Chase the ball","Ball into the striker's feet, back to goal.|Stay tight, ready for the second ball|Stand off|Tackle from behind","You lose the ball in transition.|Recover into compact lines and delay|Chase individually|Stand still"],
+mid:["Opponent presses your build-up in a 4-4-2.|Find the free man between the lines|Always go long|Dribble out","Your striker drops deep, their CB follows.|Run into the vacated space|Drop too|Stand still","Half-space opens between full-back and CB.|Receive on the half-turn there|Drift wide|Stay central","You lose the ball: counter-press moment.|Win it within 5 seconds or foul tactically|Walk back|Wait","You lead 1-0 with 10 minutes left.|Keep the ball, protect central lanes|Press recklessly|Hoof it"],
+att:["Defender steps tight on you.|Lay it off and spin in behind|Hold it|Dribble through two","Keeper has come off his line.|Place the shot or lob beyond him|Always cross|Pass back","Teammate shoots and it may rebound.|Follow up the shot|Watch|Walk away","Defensive line is high.|Time the run on the shoulder, stay onside until the pass|Run early offside|Stand still","Back four are narrow.|Stay wide and receive the switch|Come inside|Hold central"]};
+const TACT=["What is rest defence?|Players kept back in attack to stop counters|A defensive substitution|A half-time plan","A strong pressing trigger?|Backward pass or heavy touch by the opponent|Goal kick|Half-time","The half-space is...|The channel between wide and central lanes|The centre circle|The penalty spot","Offside is judged when...|The pass is played|The receiver controls it|The shot is taken","A false 9 does what?|Drops deep to drag CBs and create space|Stays on the goal line|Plays as keeper","A low block aims to...|Stay compact and deny central space|Press high|Man-mark everywhere","A back-three build-up creates...|An overload against the first press|A weaker midfield|More offsides","An overload means...|More of your players than theirs in an area|Extra time|Fewer attackers"];
+function renderQuiz(){$('#posBtns').innerHTML=Object.keys(POS).map(c=>`<button class="ghost text-sm ${c===(qpos||D.prof.pos)?'bg-sky-900':''}" onclick="startQuiz('${c}')">${c}</button>`).join('');startQuiz(qpos||D.prof.pos)}
+function startQuiz(p){qpos=p;qi=0;sc=0;lives=3;gain=0;const pick=(a,n)=>[...a].sort(()=>Math.random()-.5).slice(0,n);qs=[...Q[p],...pick(GP[GRP[p]],3),...pick(TACT,3)].map(s=>{const[t,...o]=s.split('|');const op=o.slice(0,3).map((x,i)=>({x,c:i===0}));for(let i=op.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[op[i],op[j]]=[op[j],op[i]]}return{t,opts:op}});document.querySelectorAll('#posBtns .ghost').forEach(b=>b.classList.toggle('bg-sky-900',b.textContent===p));showQ()}
+const lv=()=>Math.min(5,Math.floor(qi*5/qs.length)+1);
+function showQ(end){const b=$('#qbox');if(end||qi>=qs.length){const pct=Math.round(sc/qs.length*100),perf=sc===qs.length,x=gain+(perf?50:0);D.scores[qpos]=Math.max(D.scores[qpos]||0,pct);const a=dayAch();a.quiz=1;if(perf)a.perfect=1;addXP(x);if(perf)confetti();b.innerHTML=`<h3 class="text-4xl ${end?'text-red-400':'glow'}">${end?'OUT OF LIVES':'STAGE CLEAR'} — ${POS[qpos]} ${pct}%</h3><p class="my-3">${sc}/${qs.length} correct · +${x} XP</p><button class="btn" onclick="startQuiz('${qpos}')">Retry</button>`;return}
+const q=qs[qi],L=lv();b.innerHTML=`<div class="flex justify-between text-sm text-sky-300"><span>${POS[qpos]} · Stage ${L}/5 · ${['Trial','Selection','Second Stage','Elite','World Class'][L-1]}</span><span>${'⚡'.repeat(lives)}</span></div><div class="h-1 bg-slate-800 my-2"><div class="h-1 bg-sky-400" style="width:${qi/qs.length*100}%"></div></div><h3 class="text-2xl my-3">${esc(q.t)}</h3>`+q.opts.map((o,i)=>`<button class="opt" onclick="ans(${i},this)">${esc(o.x)}</button>`).join('')}
+function ans(i,el){const q=qs[qi];document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;if(q.opts[j].c)b.classList.add('ok')});if(q.opts[i].c){sc++;gain+=10*lv()}else{el.classList.add('bad');lives--}setTimeout(()=>{qi++;showQ(lives<=0)},1200)}
+/* TRAINING */
+function renderTrain(){const p=D.prof,w=p.pk||'speed',r=rk(),a=dayAch();a.dn=a.dn||[];$('#trainSub').textContent=`${POS[p.pos]} · ${p.h||'?'}cm · ${p.w||'?'}kg · focus: ${w} · rank ${RANKS[r][0]} (higher ranks unlock harder drills)`;
+const heavy=p.w&&p.h&&p.w/((p.h/100)**2)>25,need=[0,0,1,2,3,4];
+const list=[...(DRILLS[w]||[]).map((d,i)=>({d,i,n:need[i]})),{d:POSD[p.pos],i:1,n:0},{d:heavy?'Low-impact conditioning (bike / pool) 20 min':'Agility circuit x5',i:2,n:1}];
+$('#drills').innerHTML=list.map((o,k)=>{const lock=r<o.n,done=a.dn.includes(o.d);return`<div class="glass p-4 card flex justify-between items-center ${lock?'lock':''}"><span>${lock?'🔒 ':''}${esc(o.d)}<br><small class="text-sky-300">Tier ${o.n+1} · +${10+o.i*8} XP${lock?' · needs '+RANKS[o.n][0]:''}</small></span><button class="btn text-sm" ${lock||done?'disabled':''} onclick="drill(this,${10+o.i*8},'${esc(o.d).replace(/'/g,'')}')">${done?'✅':'Done'}</button></div>`}).join('')}
+function drill(b,x,n){const a=dayAch();a.dn=a.dn||[];a.dn.push(n);b.disabled=true;b.textContent='✅';a.drill=1;addXP(x);toast('+'+x+' XP')}
+/* NOTES */
+function addNote(){const t=$('#nb').value.trim();if(!t)return;D.notes.unshift({d:today(),k:$('#nt').value,t});$('#nb').value='';dayAch().note=1;addXP(5);renderNotes()}
+function renderNotes(){$('#nl').innerHTML=D.notes.map(n=>`<div class="glass p-4"><div class="text-sm text-sky-300">${n.d} · ${esc(n.k)}</div>${esc(n.t)}</div>`).join('')||'<p class="text-sky-300">No notes yet.</p>'}
+/* PROFILE */
+function renderProfile(){const p=D.prof;$('#pp').innerHTML=Object.keys(POS).map(c=>`<option value="${c}">${c} — ${POS[c]}</option>`).join('');$('#pn').value=p.n||'';$('#pt').value=p.t||'';$('#pp').value=p.pos;$('#ph').value=p.h||'';$('#pw').value=p.w||'';$('#pk').value=p.pk;$('#pic').src=p.pic||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="#12234A"/><text x="48" y="62" font-size="44" text-anchor="middle">⚽</text></svg>')}
+function saveProfile(){Object.assign(D.prof,{n:$('#pn').value,t:$('#pt').value,pos:$('#pp').value,h:+$('#ph').value,w:+$('#pw').value,pk:$('#pk').value});save();toast('Profile saved')}
+function pickPic(i){const f=i.files[0];if(!f)return;const img=new Image(),r=new FileReader();r.onload=()=>{img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),s=Math.min(img.width,img.height);x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,160,160);D.prof.pic=c.toDataURL('image/jpeg',.8);save();$('#pic').src=D.prof.pic};img.src=r.result};r.readAsDataURL(f)}
+/* 3D BOARD */
+const FM={'4-3-3':[4,3,3],'4-4-2':[4,4,2],'3-5-2':[3,5,2],'4-2-3-1':[4,2,3,1],'5-3-2':[5,3,2],'3-4-3':[3,4,3],'4-1-2-1-2':[4,1,2,1,2],'4-5-1':[4,5,1]};
+const RUNS=[
+{t:'STRIKER (gold): a through ball is coming. Drag yourself into the gap between CB and RB, staying onside.',ball:[0,-6],me:[12,-26],opp:[[-24,-30],[-8,-30],[8,-30],[24,-30]],to:[17,-34],r:6,y:'Start onside, arrive beyond the line in the channel between CB and full-back.'},
+{t:'CM (gold): your left winger is pressed on the touchline. Show for the pass to make a triangle.',ball:[-26,-10],me:[0,2],opp:[[-31,-12],[-20,-14],[0,-8]],to:[-14,-3],r:5,y:'Give a short safe angle in the pocket behind the pressers.'},
+{t:'RB (gold): your winger has the ball. Make the overlap run.',ball:[24,-20],me:[24,2],opp:[[28,-22],[16,-26]],to:[31,-30],r:5,y:'Overlap outside the winger to drag the full-back and open the cutback.'},
+{t:'CB (gold): your RB stepped out to press. Cover the space he left.',ball:[28,16],bo:1,me:[-2,38],opp:[[8,10]],to:[14,38],r:5,y:'Cover behind the full-back, goal-side of the runner.'},
+{t:'CDM (gold): their CAM has the ball. Screen the back line.',ball:[0,-2],bo:1,me:[22,12],opp:[[-14,0],[16,-8]],to:[0,10],r:4,y:'Sit between the ball and your goal so the middle is closed.'},
+{t:'ST (gold): winger is at the byline for a cutback. Attack the right zone.',ball:[24,-48],me:[0,-26],opp:[[-6,-40],[8,-42],[20,-44]],to:[5,-39],r:4,y:'Arrive on the penalty spot as the cutback comes, between defenders.'}];
+let B={mode:'form',i:0,V:{'3D':[0,75,92,0,0,6],Top:[0,128,1,0,0,0],Side:[-100,45,0,0,0,0]},v:[0,75,92,0,0,6],L:new THREE.Vector3(),drag:[]};
+const ray=new THREE.Raycaster(),mv=new THREE.Vector2(),pl=new THREE.Plane(new THREE.Vector3(0,1,0),0),cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+function mk(c,d){const g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.3});g.add(new THREE.Mesh(new THREE.CylinderGeometry(2,2,.8,24),m));g.position.y=.5;g.userData.d=d;return g}
+function ln(p,par){const g=new THREE.BufferGeometry().setFromPoints(p.map(q=>new THREE.Vector3(q[0],.1,q[1])));(par||B.s).add(new THREE.Line(g,new THREE.LineBasicMaterial({color:par?0xffd700:0x19c3ff})))}
+const rc=(a,b,c,d)=>ln([[a,b],[c,b],[c,d],[a,d],[a,b]]);
+function init3d(){const el=$('#cv');B.r=new THREE.WebGLRenderer({antialias:true});el.appendChild(B.r.domElement);const s=B.s=new THREE.Scene();s.background=new THREE.Color(0x050a18);B.c=new THREE.PerspectiveCamera(45,1,1,400);
+s.add(new THREE.AmbientLight(0xffffff,.7));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(30,80,40);s.add(dl);
+{const m=new THREE.Mesh(new THREE.PlaneGeometry(68,105),new THREE.MeshStandardMaterial({color:0x0b2a4a}));m.rotation.x=-Math.PI/2;s.add(m)}
+rc(-34,-52.5,34,52.5);ln([[-34,0],[34,0]]);ln([...Array(41)].map((_,i)=>[9.2*Math.cos(i/40*6.2832),9.2*Math.sin(i/40*6.2832)]));rc(-20,-52.5,20,-36);rc(-20,36,20,52.5);rc(-9,-52.5,9,-47);rc(-9,47,9,52.5);
+B.g=new THREE.Group();s.add(B.g);const cv=B.r.domElement;
+const pt=e=>{const r=cv.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,B.c)};
+cv.onpointerdown=e=>{pt(e);const h=ray.intersectObjects(B.drag,true)[0];if(h&&!B.done){let o=h.object;while(!o.userData.d)o=o.parent;B.d=o;cv.setPointerCapture(e.pointerId)}};
+cv.onpointermove=e=>{if(!B.d)return;pt(e);const p=new THREE.Vector3();if(ray.ray.intersectPlane(pl,p)){B.d.position.x=cl(p.x,-33,33);B.d.position.z=cl(p.z,-51,51)}};
+cv.onpointerup=()=>{B.d=null};addEventListener('resize',rs);(function an(){requestAnimationFrame(an);if(!$('#board').classList.contains('on'))return;const v=B.v;B.c.position.set(v[0],v[1],v[2]);B.c.lookAt(v[3],v[4],v[5]);B.r.render(s,B.c)})()}
+function rs(){if(!B.r)return;const el=$('#cv'),w=el.clientWidth,h=el.clientHeight;B.r.setSize(w,h);B.c.aspect=w/h;B.c.updateProjectionMatrix()}
+function bOpen(){const f=!B.r;if(f){$('#bf').innerHTML=Object.keys(FM).map(k=>`<option>${k}</option>`).join('');init3d()}rs();bMode(B.mode);view('Top')}
+function view(k){B.cur=k||(B.cur==='Top'?'3D':'Top');B.v=B.V[B.cur]}
+function clr(){while(B.g.children.length)B.g.remove(B.g.children[0]);B.drag=[];B.run=null;B.done=0;B.d=null;$('#bres').innerHTML='Drag the pieces, then press Check.'}
+function bMode(m){B.mode=m;clr();const sel=$('#bf');sel.style.display=m==='form'?'':'none';
+if(m==='form'){B.f=sel.value;$('#btask').textContent=`Drag all 11 players (gold = goalkeeper) into a ${B.f}. You attack the far goal.`;for(let i=0;i<11;i++){const p=mk(i?0x19c3ff:0xffd700,1);p.position.set(-30+i*6,1.8,28);B.g.add(p);B.drag.push(p)}}
+else{const s=RUNS[B.i%RUNS.length];$('#btask').textContent=s.t;const me=mk(0xffd700,1);me.position.set(s.me[0],1.8,s.me[1]);B.g.add(me);B.drag=[me];const c=mk(s.bo?0xff3b3b:0x19c3ff,0);c.position.set(s.ball[0],1.8,s.ball[1]);B.g.add(c);const bl=new THREE.Mesh(new THREE.SphereGeometry(.9,12,12),new THREE.MeshStandardMaterial({color:0xffffff}));bl.position.set(s.ball[0]+2,1,s.ball[1]);B.g.add(bl);s.opp.forEach(o=>{const p=mk(0xff3b3b,0);p.position.set(o[0],1.8,o[1]);B.g.add(p)})}}
+function tg(f){const R=FM[f],o=[[0,47]],w=[0,0,.42,.62,.78,.88];R.forEach((n,i)=>{const z=50-(.2+.6*i/(R.length-1))*95;for(let j=0;j<n;j++)o.push([n>1?(j/(n-1)*2-1)*w[n]*34:0,z])});return o}
+function ghost(x,z,r){const g=new THREE.Mesh(new THREE.RingGeometry(r-.6,r,32),new THREE.MeshBasicMaterial({color:0xffd700,side:2}));g.rotation.x=-Math.PI/2;g.position.set(x,.2,z);g.userData.p=1;B.g.add(g)}
+function bCheck(){if(B.done)return;B.done=1;let pct,msg;
+if(B.mode==='form'){const T=tg(B.f),P=[...B.drag];let tot=0;T.forEach((t,k)=>{let bi=0,bd=1e9;if(k)P.forEach((p,i)=>{const d=Math.hypot(p.position.x-t[0],p.position.z-t[1]);if(d<bd){bd=d;bi=i}});else bd=Math.hypot(P[0].position.x-t[0],P[0].position.z-t[1]);const p=P.splice(bi,1)[0];tot+=Math.max(0,1-bd/14);ghost(t[0],t[1],2);ln([[p.position.x,p.position.z],t],B.g)});pct=Math.round(tot/11*100);msg='Gold rings show the ideal '+B.f+' spots.'}
+else{const s=RUNS[B.i%RUNS.length],me=B.drag[0],r=s.r*Math.max(.5,1-.08*rk()),d=Math.hypot(me.position.x-s.to[0],me.position.z-s.to[1]);pct=d<=r?Math.round(100-d/r*15):Math.max(0,Math.round(70-(d-r)*5));msg=s.y+' (target zone shrinks as your rank rises)';ghost(s.to[0],s.to[1],r);ln([s.me,s.to],B.g);}
+const xp=pct>=50?Math.round(pct*(.35+rk()*.1)):0;if(xp){addXP(xp);D.scores['3D']=Math.max(D.scores['3D']||0,pct);dayAch().quiz=1;save()}if(pct>=90)confetti();
+$('#bres').innerHTML=`<div class="bb text-5xl glow">${pct}%</div><p>${msg}</p><p class="text-sky-300 text-sm">${xp?'+'+xp+' XP':'Score 50%+ to earn XP'}</p>`}
+function bNext(){const sel=$('#bf');if(B.mode==='form'){sel.selectedIndex=Math.floor(Math.random()*sel.options.length)}else B.i++;bMode(B.mode)}
+/* INIT */
+$('#feats').innerHTML=[['🧠','Position Quizzes','Every position, real match situations, rising difficulty.'],['🏋️','Tailored Drills','Built from your position, body and weaknesses.'],['📈','Rating Graph','Watch your overall rating climb.']].map(f=>`<div class="glass p-6 card reveal"><div class="text-4xl">${f[0]}</div><h3 class="text-2xl mt-2">${f[1]}</h3><p class="text-sky-200">${f[2]}</p></div>`).join('');
+$('#ranksG').innerHTML=RANKS.map(r=>`<div class="glass p-4 text-center card reveal"><div class="bb text-2xl text-yellow-300">${r[0]}</div><div class="text-xs">${r[1]}+ XP</div></div>`).join('');
+$('#legends').innerHTML=Object.keys(LEG).map(c=>`<div class="glass p-3 card reveal"><div class="bb text-xl glow">${c}</div><div class="text-xs text-sky-200">${LEG[c]}</div></div>`).join('');
+$('#quote').textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+if(window.google&&CLIENT_ID.indexOf('YOUR')<0){google.accounts.id.initialize({client_id:CLIENT_ID,callback:gcb});google.accounts.id.renderButton($('#gbtn'),{theme:'filled_black'})}
+addEventListener('load',()=>{if(window.google&&CLIENT_ID.indexOf('YOUR')<0){google.accounts.id.initialize({client_id:CLIENT_ID,callback:gcb});google.accounts.id.renderButton($('#gbtn'),{theme:'filled_black'})}
+setTimeout(()=>{$('#loader').style.opacity=0;setTimeout(()=>$('#loader').remove(),600)},500)});
+addEventListener('scroll',()=>{$('#prog').style.width=scrollY/(document.body.scrollHeight-innerHeight)*100+'%'});
+const io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('v')),{threshold:.1});document.querySelectorAll('.reveal').forEach(e=>io.observe(e));
+const last=localStorage.getItem('pp::last');nav();if(last)signIn(last);
+</script></body></html>
