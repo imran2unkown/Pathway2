@@ -95,7 +95,7 @@ main h2.text-4xl{border-left:6px solid #19C3FF;padding-left:12px}
  <div class="grid grid-cols-2 gap-3">
  <label>Name<input id="pn"></label><label>Team<input id="pt"></label>
  <label>Position<select id="pp"></select></label><label>Height (cm)<input id="ph" type="number"></label>
- <label>Weight (kg)<input id="pw" type="number"></label><label>Main weakness<select id="pk"><option>speed</option><option>power</option><option>dribbling</option><option>weak foot</option><option>shooting</option><option>position</option></select></label></div>
+ <label>Weight (kg)<input id="pw" type="number"></label><div class="col-span-2"><div class="mb-1">Weaknesses (pick one or more)</div><div id="pk" class="flex flex-wrap gap-2"></div></div></div>
  <button class="btn mt-4" onclick="saveProfile()">Save</button> <button class="ghost mt-4" onclick="logout()">Log out</button></div></section>
 <section id="board" class="page"><h2 class="text-4xl mb-3">TACTICS <span class="glow">BOARD</span></h2>
 <div id="bmodes" class="flex flex-wrap gap-2 mb-2"></div><div id="btabs" class="flex flex-wrap gap-1 mb-3"></div>
@@ -202,17 +202,18 @@ function showQ(end){const b=$('#qbox');if(end||qi>=qs.length){const pct=Math.rou
 const q=qs[qi],L=lv();b.innerHTML=`<div class="flex justify-between text-sm text-sky-300"><span>${POS[qpos]} · Stage ${L}/5 · ${['Trial','Selection','Second Stage','Elite','World Class'][L-1]}</span><span>${'⚡'.repeat(lives)}</span></div><div class="h-1 bg-slate-800 my-2"><div class="h-1 bg-sky-400" style="width:${qi/qs.length*100}%"></div></div><h3 class="text-2xl my-3">${esc(q.t)}</h3>`+q.opts.map((o,i)=>`<button class="opt" onclick="ans(${i},this)">${esc(o.x)}</button>`).join('')}
 function ans(i,el){const q=qs[qi];document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;if(q.opts[j].c)b.classList.add('ok')});if(q.opts[i].c){sc++;gain+=10*lv()}else{el.classList.add('bad');lives--}setTimeout(()=>{qi++;showQ(lives<=0)},1200)}
 /* TRAINING */
-function renderTrain(){const p=D.prof,w=p.pk||'speed',r=rk(),a=dayAch();a.dn=a.dn||[];$('#trainSub').textContent=`${POS[p.pos]} · ${p.h||'?'}cm · ${p.w||'?'}kg · focus: ${w} · rank ${RANKS[r][0]} (higher ranks unlock harder drills)`;
+function renderTrain(){const p=D.prof,W=wk(p),w=W.join(' + '),r=rk(),a=dayAch();a.dn=a.dn||[];$('#trainSub').textContent=`${POS[p.pos]} · ${p.h||'?'}cm · ${p.w||'?'}kg · focus: ${w} · rank ${RANKS[r][0]} (higher ranks unlock harder drills)`;
 const heavy=p.w&&p.h&&p.w/((p.h/100)**2)>25,need=[0,0,1,2,3,4];
-const list=[...(DRILLS[w]||[]).map((d,i)=>({d,i,n:need[i]})),{d:POSD[p.pos],i:1,n:0},{d:heavy?'Low-impact conditioning (bike / pool) 20 min':'Agility circuit x5',i:2,n:1}];
+const list=[...W.flatMap(k=>(DRILLS[k]||[]).map((d,i)=>({d,i,n:need[i]}))),{d:POSD[p.pos],i:1,n:0},{d:heavy?'Low-impact conditioning (bike / pool) 20 min':'Agility circuit x5',i:2,n:1}];
 $('#drills').innerHTML=list.map((o,k)=>{const lock=r<o.n,done=a.dn.includes(o.d);return`<div class="glass p-4 card flex justify-between items-center ${lock?'lock':''}"><span>${lock?'🔒 ':''}${esc(o.d)}<br><small class="text-sky-300">Tier ${o.n+1} · +${10+o.i*8} XP${lock?' · needs '+RANKS[o.n][0]:''}</small></span><button class="btn text-sm" ${lock||done?'disabled':''} onclick="drill(this,${10+o.i*8},'${esc(o.d).replace(/'/g,'')}')">${done?'✅':'Done'}</button></div>`}).join('')}
 function drill(b,x,n){const a=dayAch();a.dn=a.dn||[];a.dn.push(n);b.disabled=true;b.textContent='✅';a.drill=1;addXP(x);toast('+'+x+' XP')}
 /* NOTES */
 function addNote(){const t=$('#nb').value.trim();if(!t)return;D.notes.unshift({d:today(),k:$('#nt').value,t});$('#nb').value='';dayAch().note=1;addXP(5);renderNotes()}
 function renderNotes(){$('#nl').innerHTML=D.notes.map(n=>`<div class="glass p-4"><div class="text-sm text-sky-300">${n.d} · ${esc(n.k)}</div>${esc(n.t)}</div>`).join('')||'<p class="text-sky-300">No notes yet.</p>'}
 /* PROFILE */
-function renderProfile(){const p=D.prof;$('#pp').innerHTML=Object.keys(POS).map(c=>`<option value="${c}">${c} — ${POS[c]}</option>`).join('');$('#pn').value=p.n||'';$('#pt').value=p.t||'';$('#pp').value=p.pos;$('#ph').value=p.h||'';$('#pw').value=p.w||'';$('#pk').value=p.pk;$('#pic').src=p.pic||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="#12234A"/><text x="48" y="62" font-size="44" text-anchor="middle">⚽</text></svg>')}
-function saveProfile(){Object.assign(D.prof,{n:$('#pn').value,t:$('#pt').value,pos:$('#pp').value,h:+$('#ph').value,w:+$('#pw').value,pk:$('#pk').value});save();toast('Profile saved')}
+function renderProfile(){const p=D.prof;$('#pp').innerHTML=Object.keys(POS).map(c=>`<option value="${c}">${c} — ${POS[c]}</option>`).join('');$('#pn').value=p.n||'';$('#pt').value=p.t||'';$('#pp').value=p.pos;$('#ph').value=p.h||'';$('#pw').value=p.w||'';$('#pk').innerHTML=['speed','power','dribbling','weak foot','shooting','position'].map(k=>`<button type="button" data-k="${k}" class="pill ${wk(p).includes(k)?'on':''}" onclick="this.classList.toggle('on')">${k}</button>`).join('');$('#pic').src=p.pic||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="#12234A"/><text x="48" y="62" font-size="44" text-anchor="middle">⚽</text></svg>')}
+const wk=p=>Array.isArray(p.pk)?p.pk:[p.pk||'speed'];
+function saveProfile(){const W2=[...document.querySelectorAll('#pk .pill.on')].map(b=>b.dataset.k);if(!W2.length)return toast('Pick at least one weakness');Object.assign(D.prof,{n:$('#pn').value,t:$('#pt').value,pos:$('#pp').value,h:+$('#ph').value,w:+$('#pw').value,pk:W2});save();toast('Profile saved')}
 function pickPic(i){const f=i.files[0];if(!f)return;const img=new Image(),r=new FileReader();r.onload=()=>{img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),s=Math.min(img.width,img.height);x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,160,160);D.prof.pic=c.toDataURL('image/jpeg',.8);save();$('#pic').src=D.prof.pic};img.src=r.result};r.readAsDataURL(f)}
 /* 3D BOARD */
 const FM={'4-3-3':[4,3,3],'4-4-2':[4,4,2],'3-5-2':[3,5,2],'4-2-3-1':[4,2,3,1],'5-3-2':[5,3,2],'3-4-3':[3,4,3],'4-1-2-1-2':[4,1,2,1,2],'4-5-1':[4,5,1]};
