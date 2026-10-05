@@ -69,9 +69,19 @@ main h2.text-4xl{border-left:6px solid #19C3FF;padding-left:12px}
  <h2 class="text-4xl mt-14 mb-4">LEGENDS BY POSITION</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="legends"></div>
 </section>
 
-<section id="login" class="page"><div class="glass p-8 max-w-md mx-auto text-center"><h2 class="text-4xl mb-4">LOG IN</h2>
-<input id="em" type="email" placeholder="Email" autocomplete="email" class="mb-3"><input id="pw" type="password" placeholder="Password (8+ characters)" autocomplete="current-password">
-<div class="flex gap-3 mt-4 justify-center"><button class="btn" onclick="auth('in')">Log in</button><button class="ghost" onclick="auth('up')">Create account</button></div><p class="text-xs text-sky-300 mt-3" id="lnote"></p></div></section>
+<section id="login" class="page"><div class="glass p-8 max-w-md mx-auto text-center"><h2 class="text-4xl mb-4">ACCOUNT</h2>
+<div class="flex justify-center gap-2 mb-4"><button class="pill on" id="mi" onclick="lmode('in')">Log in</button><button class="pill" id="mu" onclick="lmode('up')">Create account</button></div>
+<input id="em" type="email" placeholder="Email" autocomplete="email" class="mb-3">
+<div class="relative mb-3"><input id="pw" type="password" placeholder="Password (8+ characters)" autocomplete="current-password"><button type="button" class="absolute right-3 top-2" onclick="eye('pw',this)" aria-label="Show or hide password">👁</button></div>
+<div class="relative mb-3" id="pw2w" style="display:none"><input id="pw2" type="password" placeholder="Confirm password" autocomplete="new-password"><button type="button" class="absolute right-3 top-2" onclick="eye('pw2',this)" aria-label="Show or hide password">👁</button></div>
+<button class="btn w-full" id="amain" onclick="auth(LM)">Log in</button>
+<p class="mt-3 text-sm" id="fg"><a href="#" class="text-sky-300 underline" onclick="event.preventDefault();$('#rec').style.display=''">Forgot password?</a></p>
+<div id="rec" style="display:none" class="mt-4 text-left border-t border-sky-900 pt-4"><p class="text-sm text-sky-300 mb-2">We'll email a 6-digit code to the address above (check spam too).</p><button class="ghost w-full" onclick="recSend()">Send code</button>
+<div id="rec2" style="display:none" class="mt-3 space-y-3"><input id="rc" inputmode="numeric" placeholder="Code from your email">
+<div class="relative"><input id="np" type="password" placeholder="New password (8+ characters)" autocomplete="new-password"><button type="button" class="absolute right-3 top-2" onclick="eye('np',this)" aria-label="Show or hide password">👁</button></div>
+<div class="relative"><input id="np2" type="password" placeholder="Confirm new password" autocomplete="new-password"><button type="button" class="absolute right-3 top-2" onclick="eye('np2',this)" aria-label="Show or hide password">👁</button></div>
+<button class="btn w-full" onclick="recDone()">Reset password &amp; log in</button></div></div>
+<p class="text-xs text-sky-300 mt-3" id="lnote"></p></div></section>
 
 <section id="dash" class="page"><div id="pcard"></div>
  <div class="grid md:grid-cols-4 gap-4" id="stats"></div><div class="glass p-4 mt-4" id="rbar"></div>
@@ -112,13 +122,20 @@ let user=null,D=null;
 const K=e=>'playerpath::'+e;
 function load(e){try{return JSON.parse(localStorage.getItem(K(e)))}catch(x){return null}}
 function save(){try{localStorage.setItem(K(user),JSON.stringify(D))}catch(x){}cloud('push')}
+let LM='in';
+function eye(id,b){const i=$('#'+id),h=i.type==='password';i.type=h?'text':'password';b.textContent=h?'🙈':'👁'}
+function lmode(m){LM=m;$('#mi').classList.toggle('on',m==='in');$('#mu').classList.toggle('on',m==='up');$('#pw2w').style.display=m==='up'?'':'none';$('#amain').textContent=m==='up'?'Create account':'Log in';$('#fg').style.display=m==='in'?'':'none';if(m==='up')$('#rec').style.display='none';$('#pw').autocomplete=m==='up'?'new-password':'current-password'}
+const okE=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+async function recSend(){const e=$('#em').value.trim().toLowerCase();if(!okE(e))return toast('Enter your email above first');if(!(SB_URL&&SB_KEY))return toast('Recovery needs cloud accounts to be switched on');try{tok=null;await api('/auth/v1/otp',{method:'POST',body:JSON.stringify({email:e,create_user:false})});$('#rec2').style.display='';toast('Code sent. Check your inbox and spam.')}catch(x){toast(x.message)}}
+async function recDone(){const e=$('#em').value.trim().toLowerCase(),c=$('#rc').value.trim(),p=$('#np').value;if(!c)return toast('Enter the code from your email');if(p.length<8)return toast('Password needs 8+ characters');if(mode==='up'&&p!==$('#pw2').value)return toast('Passwords do not match');if(p!==$('#np2').value)return toast('Passwords do not match');
+try{tok=null;const j=await api('/auth/v1/verify',{method:'POST',body:JSON.stringify({type:'email',email:e,token:c})});tok=j.access_token;uid=j.user.id;await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:p})});localStorage.setItem('pp::ref',JSON.stringify({r:j.refresh_token,e}));['rc','np','np2'].forEach(i=>$('#'+i).value='');signIn(e)}catch(x){tok=null;toast(x.message)}}
 let tok=null,uid=null;
 async function api(p,o={}){const r=await fetch(SB_URL+p,{...o,headers:{apikey:SB_KEY,'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{}),...(o.headers||{})}});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.error_description||j.message||'Request failed');return j}
 async function refresh(){try{const o=JSON.parse(localStorage.getItem('pp::ref')||'null');if(!o)return 0;tok=null;const j=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:o.r})});tok=j.access_token;uid=j.user.id;localStorage.setItem('pp::ref',JSON.stringify({r:j.refresh_token,e:o.e}));return o.e}catch(e){return 0}}
 async function hash(p,salt){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function auth(mode){const e=$('#em').value.trim().toLowerCase(),p=$('#pw').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return toast('Enter a valid email');if(p.length<8)return toast('Password needs 8+ characters');
 try{if(SB_URL&&SB_KEY){tok=null;let j=mode==='up'?await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email:e,password:p})}):null;if(!j||!j.access_token)j=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:e,password:p})});tok=j.access_token;uid=j.user.id;localStorage.setItem('pp::ref',JSON.stringify({r:j.refresh_token,e}));signIn(e)}
-else{const key='pp::acct::'+e,a=JSON.parse(localStorage.getItem(key)||'null');if(mode==='up'){if(a)return toast('Account already exists on this device');const salt=[...crypto.getRandomValues(new Uint32Array(2))].join('-');localStorage.setItem(key,JSON.stringify({salt,h:await hash(p,salt)}))}else if(!a||await hash(p,a.salt)!==a.h)return toast('Wrong email or password');signIn(e)}}catch(x){toast(x.message)}$('#pw').value=''}
+else{const key='pp::acct::'+e,a=JSON.parse(localStorage.getItem(key)||'null');if(mode==='up'){if(a)return toast('Account already exists on this device');const salt=[...crypto.getRandomValues(new Uint32Array(2))].join('-');localStorage.setItem(key,JSON.stringify({salt,h:await hash(p,salt)}))}else if(!a||await hash(p,a.salt)!==a.h)return toast('Wrong email or password');signIn(e)}}catch(x){toast(x.message)}$('#pw').value='';$('#pw2').value=''}
 async function cloud(m){if(!SB_URL||!SB_KEY||!tok)return;try{if(m==='push')await api('/rest/v1/profiles?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({user_id:uid,data:D})});else{const r=await api('/rest/v1/profiles?select=data');if(!r.length)return cloud('push');if(r[0].data&&r[0].data.xp>=D.xp){D=r[0].data;localStorage.setItem(K(user),JSON.stringify(D));if($('#dash').classList.contains('on')){renderDash();dash2()}}}}catch(e){if(/JWT|expired/i.test(e.message)&&await refresh())return cloud(m)}}
 
 function toast(m){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:80px;right:20px;z-index:99;background:#050A18;border:1px solid #19C3FF;color:#19C3FF;padding:12px 18px;border-radius:12px';document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
