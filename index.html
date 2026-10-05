@@ -2,7 +2,6 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Player Path — Train Your Football Brain</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{--pitch:#050A18;--neon:#19C3FF;--gold:#FFD700}
@@ -70,10 +69,9 @@ main h2.text-4xl{border-left:6px solid #19C3FF;padding-left:12px}
  <h2 class="text-4xl mt-14 mb-4">LEGENDS BY POSITION</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="legends"></div>
 </section>
 
-<section id="login" class="page"><div class="glass p-8 max-w-md mx-auto text-center">
- <h2 class="text-4xl mb-4">LOG IN</h2><div id="gbtn" class="flex justify-center mb-4"></div>
- <p class="text-sm text-sky-300 mb-3">or continue with your Gmail address</p>
- <input id="em" type="email" placeholder="you@gmail.com"><button class="btn w-full mt-3" onclick="emailLogin()">Continue</button></div></section>
+<section id="login" class="page"><div class="glass p-8 max-w-md mx-auto text-center"><h2 class="text-4xl mb-4">LOG IN</h2>
+<input id="em" type="email" placeholder="Email" autocomplete="email" class="mb-3"><input id="pw" type="password" placeholder="Password (8+ characters)" autocomplete="current-password">
+<div class="flex gap-3 mt-4 justify-center"><button class="btn" onclick="auth('in')">Log in</button><button class="ghost" onclick="auth('up')">Create account</button></div><p class="text-xs text-sky-300 mt-3" id="lnote"></p></div></section>
 
 <section id="dash" class="page"><div id="pcard"></div>
  <div class="grid md:grid-cols-4 gap-4" id="stats"></div><div class="glass p-4 mt-4" id="rbar"></div>
@@ -110,12 +108,18 @@ main h2.text-4xl{border-left:6px solid #19C3FF;padding-left:12px}
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>new Date().toISOString().slice(0,10);
-const CLIENT_ID="YOUR_GOOGLE_CLIENT_ID_HERE";
 let user=null,D=null;
 const K=e=>'playerpath::'+e;
 function load(e){try{return JSON.parse(localStorage.getItem(K(e)))}catch(x){return null}}
 function save(){try{localStorage.setItem(K(user),JSON.stringify(D))}catch(x){}cloud('push')}
-async function cloud(m){if(!SB_URL||!user)return;const h={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};try{if(m==='push')await fetch(SB_URL+'/rest/v1/profiles',{method:'POST',headers:{...h,Prefer:'resolution=merge-duplicates'},body:JSON.stringify({email:user,data:D})});else{const r=await(await fetch(SB_URL+'/rest/v1/profiles?email=eq.'+encodeURIComponent(user)+'&select=data',{headers:h})).json();if(r[0]&&r[0].data.xp>=D.xp){D=r[0].data;localStorage.setItem(K(user),JSON.stringify(D));if($('#dash').classList.contains('on')){renderDash();dash2()}}}}catch(e){}}
+let tok=null,uid=null;
+async function api(p,o={}){const r=await fetch(SB_URL+p,{...o,headers:{apikey:SB_KEY,'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{}),...(o.headers||{})}});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.error_description||j.message||'Request failed');return j}
+async function refresh(){try{const o=JSON.parse(localStorage.getItem('pp::ref')||'null');if(!o)return 0;tok=null;const j=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:o.r})});tok=j.access_token;uid=j.user.id;localStorage.setItem('pp::ref',JSON.stringify({r:j.refresh_token,e:o.e}));return o.e}catch(e){return 0}}
+async function hash(p,salt){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function auth(mode){const e=$('#em').value.trim().toLowerCase(),p=$('#pw').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return toast('Enter a valid email');if(p.length<8)return toast('Password needs 8+ characters');
+try{if(SB_URL&&SB_KEY){tok=null;let j=mode==='up'?await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email:e,password:p})}):null;if(!j||!j.access_token)j=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:e,password:p})});tok=j.access_token;uid=j.user.id;localStorage.setItem('pp::ref',JSON.stringify({r:j.refresh_token,e}));signIn(e)}
+else{const key='pp::acct::'+e,a=JSON.parse(localStorage.getItem(key)||'null');if(mode==='up'){if(a)return toast('Account already exists on this device');const salt=[...crypto.getRandomValues(new Uint32Array(2))].join('-');localStorage.setItem(key,JSON.stringify({salt,h:await hash(p,salt)}))}else if(!a||await hash(p,a.salt)!==a.h)return toast('Wrong email or password');signIn(e)}}catch(x){toast(x.message)}$('#pw').value=''}
+async function cloud(m){if(!SB_URL||!SB_KEY||!tok)return;try{if(m==='push')await api('/rest/v1/profiles?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({user_id:uid,data:D})});else{const r=await api('/rest/v1/profiles?select=data');if(!r.length)return cloud('push');if(r[0].data&&r[0].data.xp>=D.xp){D=r[0].data;localStorage.setItem(K(user),JSON.stringify(D));if($('#dash').classList.contains('on')){renderDash();dash2()}}}}catch(e){if(/JWT|expired/i.test(e.message)&&await refresh())return cloud(m)}}
 
 function toast(m){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:80px;right:20px;z-index:99;background:#050A18;border:1px solid #19C3FF;color:#19C3FF;padding:12px 18px;border-radius:12px';document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
 function confetti(){for(let i=0;i<50;i++){const c=document.createElement('div');c.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}vw;width:9px;height:9px;background:${['#19C3FF','#FFD700','#1E90FF','#fff'][i%4]};z-index:99;pointer-events:none`;c.animate([{transform:'translateY(0)'},{transform:'translateY(105vh) rotate(700deg)',opacity:0}],{duration:2000+Math.random()*1500});document.body.appendChild(c);setTimeout(()=>c.remove(),3600)}}
@@ -153,18 +157,16 @@ function go(p){document.querySelectorAll('.page').forEach(e=>e.classList.remove(
 function nav(){const n=$('#navR');n.innerHTML=user?['dash:Dashboard','quiz:Quizzes','board:3D Board','train:Training','notes:Notes','profile:Profile'].map(x=>{const[a,b]=x.split(':');return`<button class="text-sky-200 hover:text-sky-400" onclick="go('${a}')">${b}</button>`}).join(''):'<button class="btn" onclick="go(\'login\')">Log in</button>'}
 /* AUTH */
 function signIn(email){user=email.toLowerCase();D=load(user)||{xp:0,hist:[],scores:{},notes:[],prof:{pos:'ST',pk:'speed'},days:{}};localStorage.setItem(K(user),JSON.stringify(D));localStorage.setItem('pp::last',user);cloud('pull');nav();go('dash');confetti()}
-function emailLogin(){const e=$('#em').value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return toast('Enter a valid email');signIn(e)}
-function logout(){user=null;D=null;localStorage.removeItem('pp::last');nav();go('home')}
-function gcb(r){try{const p=JSON.parse(atob(r.credential.split('.')[1]));signIn(p.email)}catch(e){toast('Google sign-in failed')}}
+function logout(){user=null;D=null;tok=null;uid=null;localStorage.removeItem('pp::last');localStorage.removeItem('pp::ref');nav();go('home')}
 /* STATS */
 function avg(){const v=Object.values(D.scores);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0}
-function rating(){return Math.min(99,Math.round(40+avg()*0.25+Math.sqrt(D.xp)*0.45))}
+function rating(){const k=Object.values(D.scores).reduce((a,b)=>a+b,0)*.0235;return Math.min(100,Math.round(Math.min(40,k)+Math.min(60,Math.pow(D.xp/15000,.7)*60)))}
 function dayAch(){return D.days[today()]||(D.days[today()]={quiz:0,perfect:0,drill:0,note:0,dn:[]})}
 function addXP(n){const before=rankOf(D.xp)[0];D.xp+=n;D.hist.push(rating());D.hist=D.hist.slice(-20);save();if(rankOf(D.xp)[0]!==before){banner('RANK UP: '+rankOf(D.xp)[0].toUpperCase());confetti()}}
 function renderDash(){const r=rating(),rk=rankOf(D.xp);
-$('#stats').innerHTML=[['RATING',r],['FOOTBALL IQ',avg()+'%'],['XP',D.xp],['RANK',rk[0]]].map(s=>`<div class="glass p-5 text-center card"><div class="text-sm text-sky-300">${s[0]}</div><div class="bb text-5xl glow ${typeof s[1]=='number'?'cu':''}" data-v="${s[1]}">${s[1]}</div></div>`).join('');
-const h=D.hist.length?D.hist:[r],pts=h.map((v,i)=>`${h.length>1?i*300/(h.length-1):150},${115-(v-30)*1.5}`).join(' ');
-$('#graph').innerHTML=`<polyline points="${pts}" fill="none" stroke="#19C3FF" stroke-width="3"/>`+h.map((v,i)=>`<circle cx="${h.length>1?i*300/(h.length-1):150}" cy="${115-(v-30)*1.5}" r="3" fill="#FFD700"/>`).join('');
+$('#stats').innerHTML=[['RATING /100',r],['FOOTBALL IQ',avg()+'%'],['XP',D.xp],['RANK',rk[0]]].map(s=>`<div class="glass p-5 text-center card"><div class="text-sm text-sky-300">${s[0]}</div><div class="bb text-5xl glow ${typeof s[1]=='number'?'cu':''}" data-v="${s[1]}">${s[1]}</div></div>`).join('');
+const h=D.hist.length?D.hist:[r],pts=h.map((v,i)=>`${h.length>1?i*300/(h.length-1):150},${115-v*1.1}`).join(' ');
+$('#graph').innerHTML=`<polyline points="${pts}" fill="none" stroke="#19C3FF" stroke-width="3"/>`+h.map((v,i)=>`<circle cx="${h.length>1?i*300/(h.length-1):150}" cy="${115-v*1.1}" r="3" fill="#FFD700"/>`).join('');
 const a=dayAch();$('#ach').innerHTML=[['Finish a quiz',a.quiz],['Get a perfect quiz',a.perfect],['Complete a drill',a.drill],['Write a note',a.note]].map(x=>`<div class="flex justify-between py-1 border-b border-sky-900"><span>${x[0]}</span><span>${x[1]?'✅':'⬜'}</span></div>`).join('');
 $('#dq').textContent=QUOTES[new Date().getDate()%QUOTES.length];
 const ri=RANKS.indexOf(rk),nx=RANKS[ri+1];$('#rbar').innerHTML=nx?`<div class="flex justify-between text-sm mb-1"><span>${rk[0]}</span><span>${nx[1]-D.xp} XP to ${nx[0]}</span></div><div class="h-3 bg-slate-800"><div class="h-3 bg-sky-400" style="width:${(D.xp-rk[1])/(nx[1]-rk[1])*100}%;transition:width 1.2s"></div></div>`:'<b class="text-yellow-300">MAX RANK — WORLD #1</b>';
@@ -187,7 +189,7 @@ RW:["Their full-back is tired late on.|Isolate and attack him 1v1|Pass back|Stay
 CF:["Defenders are tight on you.|Lay off first-time and spin|Hold it|Long shot","Your team crosses.|Attack the near post and drag the CB|Wait at the spot|Stand offside"],
 ST:["Their defence sits deep.|Drop and link, then run again|Stand on the line|Only wait","Keeper pushes the ball out.|Be first to the rebound|Stand still|Watch"]};
 function dash2(){const p=D.prof,r=rating(),sc=Object.entries(D.scores).sort((a,b)=>b[1]-a[1]),lab=k=>k==='3D'?'3D BOARD':k==='BQ'?'BOARD QUIZ':POS[k]||k,low=sc.filter(x=>x[0]!=='3D').slice(-1)[0];
-$('#pcard').innerHTML=`<div class="grid md:grid-cols-3 gap-4 mb-4"><div class="pc p-5 flex items-center gap-4"><div><div class="bb text-6xl leading-none">${r}</div><div class="bb text-2xl">${p.pos}</div></div><div class="flex-1"><div class="bb text-2xl">${esc(p.n||'YOUR NAME')}</div><div class="text-sm">${esc(p.t||'Your team')} · ${rankOf(D.xp)[0]}</div></div>${p.pic?`<img src="${p.pic}" class="w-16 h-16 rounded-full object-cover border-2 border-black/40">`:''}</div><div class="glass p-5 md:col-span-2"><h3 class="text-2xl mb-2">KNOWLEDGE BY POSITION</h3>${sc.length?sc.map(([k,v])=>`<div class="flex items-center gap-2 text-sm mb-1"><span class="w-24">${lab(k)}</span><div class="flex-1 h-2 bg-slate-800"><div class="h-2 bg-sky-400" style="width:${v}%"></div></div><span>${v}%</span></div>`).join(''):'<p class="text-sky-300">Take a quiz or a 3D board challenge to fill this in.</p>'}${low&&low[1]<70?`<p class="text-yellow-300 text-sm mt-2">Focus next: ${lab(low[0])} (${low[1]}%)</p>`:''}</div></div>`}
+$('#pcard').innerHTML=`<div class="grid md:grid-cols-3 gap-4 mb-4"><div class="pc p-5 flex items-center gap-4"><div><div class="bb text-6xl leading-none">${r}<span class="text-xl">/100</span></div><div class="bb text-2xl">${p.pos}</div></div><div class="flex-1"><div class="bb text-2xl">${esc(p.n||'YOUR NAME')}</div><div class="text-sm">${esc(p.t||'Your team')} · ${rankOf(D.xp)[0]}</div></div>${p.pic?`<img src="${p.pic}" class="w-16 h-16 rounded-full object-cover border-2 border-black/40">`:''}</div><div class="glass p-5 md:col-span-2"><h3 class="text-2xl mb-2">KNOWLEDGE BY POSITION</h3>${sc.length?sc.map(([k,v])=>`<div class="flex items-center gap-2 text-sm mb-1"><span class="w-24">${lab(k)}</span><div class="flex-1 h-2 bg-slate-800"><div class="h-2 bg-sky-400" style="width:${v}%"></div></div><span>${v}%</span></div>`).join(''):'<p class="text-sky-300">Take a quiz or a 3D board challenge to fill this in.</p>'}${low&&low[1]<70?`<p class="text-yellow-300 text-sm mt-2">Focus next: ${lab(low[0])} (${low[1]}%)</p>`:''}</div></div>`}
 let qs=[],qi=0,sc=0,qpos='',lives=3,gain=0;
 const GRP={GK:'gk',CB:'def',LB:'def',RB:'def',LWB:'def',RWB:'def',CDM:'mid',CM:'mid',CAM:'mid',LM:'mid',RM:'mid',LW:'att',RW:'att',CF:'att',ST:'att'};
 const GP={gk:["Opponent breaks 1v1, ball bounces, you're off your line.|Retreat watching the ball, stay set|Sprint straight at him|Freeze","Back-pass from your CB under press.|Clear first-time to the safe side|Dribble the striker|Hold it","Free kick 25 yards, central, wall of 4.|Cover the open side, trust the wall|Hide behind the wall|Stay on one post","Cross to the far post, you're central.|Step toward it, call early, catch with two hands|Stay on the line|Rush the near post","Shot from a tight angle.|Close the near post first, stay big|Cover the far post|Dive before the shot"],
@@ -284,10 +286,10 @@ $('#feats').innerHTML=[['🧠','Position Quizzes','Every position, real match si
 $('#ranksG').innerHTML=RANKS.map(r=>`<div class="glass p-4 text-center card reveal"><div class="bb text-2xl text-yellow-300">${r[0]}</div><div class="text-xs">${r[1]}+ XP</div></div>`).join('');
 $('#legends').innerHTML=Object.keys(LEG).map(c=>`<div class="glass p-3 card reveal lg"><div class="bb text-xl glow">${c}</div><div class="text-xs text-sky-200">${LEG[c]}</div></div>`).join('');
 $('#quote').textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
-if(window.google&&CLIENT_ID.indexOf('YOUR')<0){google.accounts.id.initialize({client_id:CLIENT_ID,callback:gcb});google.accounts.id.renderButton($('#gbtn'),{theme:'filled_black'})}
-addEventListener('load',()=>{if(window.google&&CLIENT_ID.indexOf('YOUR')<0){google.accounts.id.initialize({client_id:CLIENT_ID,callback:gcb});google.accounts.id.renderButton($('#gbtn'),{theme:'filled_black'})}
+
+addEventListener('load',()=>{
 setTimeout(()=>{$('#loader').style.opacity=0;setTimeout(()=>$('#loader').remove(),600)},500)});
 addEventListener('scroll',()=>{$('#prog').style.width=scrollY/(document.body.scrollHeight-innerHeight)*100+'%'});
 const io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('v')),{threshold:.1});document.querySelectorAll('.reveal').forEach(e=>io.observe(e));
-const last=localStorage.getItem('pp::last');nav();if(last)signIn(last);
+nav();$('#lnote').textContent=SB_URL&&SB_KEY?'Your progress syncs across devices.':'Cloud sync is off: progress stays on this device.';(async()=>{if(SB_URL&&SB_KEY){const e=await refresh();if(e)signIn(e)}else{const l=localStorage.getItem('pp::last');if(l)signIn(l)}})();
 </script></body></html>
